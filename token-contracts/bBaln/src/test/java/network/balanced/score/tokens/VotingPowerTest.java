@@ -36,8 +36,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 /**
  * Test voting power in the following scenario.
@@ -78,6 +77,7 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     public static BigInteger WEEK = DAY.multiply(BigInteger.valueOf(7L));
     public static BigInteger YEAR = DAY.multiply(BigInteger.valueOf(365L));
     public static BigInteger MAX_TIME = YEAR.multiply(BigInteger.valueOf(4L));
+    private static final String NATIVE_NID = "0x1.ICON";
 
     private BoostedBalnImpl scoreSpy;
 
@@ -85,6 +85,7 @@ public class VotingPowerTest extends AbstractBoostedBalnTest {
     public void setup() throws Exception {
         tokenScore = sm.deploy(owner, IRC2Token.class, INITIAL_SUPPLY);
         MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
 
         bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), B_BALANCED_SYMBOL);

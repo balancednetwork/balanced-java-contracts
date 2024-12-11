@@ -48,13 +48,16 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     BigInteger getTotalLocked();
 
     @External(readonly = true)
-    List<Address> getUsers(int start, int end);
+    List<String> getUsers(int start, int end);
 
     @External(readonly = true)
     boolean hasLocked(Address _owner);
 
     @External(readonly = true)
     BigInteger getLastUserSlope(Address address);
+
+    @External(readonly = true)
+    BigInteger getLastUserSlopeV2(String address);
 
     @External(readonly = true)
     BigInteger userPointHistoryTimestamp(Address address, BigInteger index);
@@ -81,6 +84,9 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);
 
     @External(readonly = true)
+    BigInteger xBalanceOf(String _owner, @Optional BigInteger timestamp);
+
+    @External(readonly = true)
     BigInteger balanceOfAt(Address _owner, BigInteger block);
 
     @External(readonly = true)
@@ -100,4 +106,7 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
 
     @External(readonly = true)
     BigInteger userPointEpoch(Address address);
+
+    @External(readonly = true)
+    BigInteger xUserPointEpoch(String address);
 }

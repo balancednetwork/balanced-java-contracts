@@ -32,14 +32,14 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 @DisplayName("Statemachine Tests")
 public class StateMachineTest extends AbstractBoostedBalnTest {
     private static final Long WEEK = 7 * 86400L * 1000000L;
     private static final Long MAX_TIME = 4 * 365 * 86400L * 1000000L;
     private static final BigInteger MINT_AMOUNT = BigInteger.TEN.pow(40);
+    private static final String NATIVE_NID = "0x1.ICON";
 
     private static final ServiceManager sm = getServiceManager();
 
@@ -82,6 +82,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
 
         bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), "bBALN");

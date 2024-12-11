@@ -619,11 +619,11 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void onKick(Address user) {
+    public void onKick(String user) {
         checkStatus();
         only(getBoostedBaln());
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user.toString(), getAllSources(), BigInteger.ZERO, boostedSupply);
+        updateAllUserRewards(user, getAllSources(), BigInteger.ZERO, boostedSupply);
     }
 
     @External
@@ -635,11 +635,11 @@ public class RewardsImpl implements Rewards {
     }
 
     @External
-    public void onBalanceUpdate(Address user, BigInteger balance) {
+    public void onBalanceUpdate(String user, BigInteger balance) {
         checkStatus();
         only(getBoostedBaln());
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user.toString(), getAllSources(), balance, boostedSupply);
+        updateAllUserRewards(user, getAllSources(), balance, boostedSupply);
     }
 
     @External
@@ -1034,7 +1034,7 @@ public class RewardsImpl implements Rewards {
 
     private BigInteger fetchBoostedBalance(Address user) {
         try {
-            return (BigInteger) RewardsImpl.call(getBoostedBaln(), "balanceOf", user, BigInteger.ZERO);
+            return (BigInteger) RewardsImpl.call(getBoostedBaln(), "xBalanceOf", user, BigInteger.ZERO);
         } catch (Exception e) {
             return BigInteger.ZERO;
         }

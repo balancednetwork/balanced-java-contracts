@@ -144,6 +144,7 @@ public class DexImpl extends AbstractDex {
         require(_value.compareTo(BigInteger.ZERO) > 0, TAG + ": Invalid token transfer value");
 
         if (method.equals("_deposit")) {
+
             JsonObject params = json.get("params").asObject();
             String to = _from;
             if (params.get("address") != null) {

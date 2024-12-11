@@ -32,6 +32,7 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 class BoostedBalnTest extends AbstractBoostedBalnTest {
     private static final ServiceManager sm = getServiceManager();
@@ -44,6 +45,7 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
 
     private static final String bBalnName = "Boosted Balance";
     private static final String bBalnSymbol = "bBALN";
+    private static final String NATIVE_NID = "0x1.ICON";
 
     public static class IRC2BasicToken extends IRC2Basic {
         public IRC2BasicToken(String _name, String _symbol, int _decimals, BigInteger _totalSupply) {
@@ -55,6 +57,7 @@ class BoostedBalnTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
 
         bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), bBalnSymbol);
