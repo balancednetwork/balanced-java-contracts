@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
@@ -71,6 +72,9 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     @External
     void increaseUnlockTime(BigInteger unlockTime);
 
+    @XCall
+    void xIncreaseUnlockTime(String from, BigInteger unlockTime);
+
     @External
     void kick(Address user);
 
@@ -79,6 +83,18 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
 
     @External
     void withdrawEarly();
+
+    @XCall
+    void xKick(String from);
+
+    @XCall
+    void xWithdrawEarly(String from);
+
+    @XCall
+    void xWithdraw(String from);
+
+    @XCall
+    void checkpoint(String from);
 
     @External(readonly = true)
     BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);

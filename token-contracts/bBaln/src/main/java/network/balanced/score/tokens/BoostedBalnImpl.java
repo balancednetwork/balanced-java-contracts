@@ -19,9 +19,11 @@ package network.balanced.score.tokens;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import foundation.icon.xcall.NetworkAddress;
+import network.balanced.score.lib.interfaces.BoostedBalnXCall;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.TokenTransfer;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.XCallUtils;
 import network.balanced.score.tokens.db.LockedBalance;
 import network.balanced.score.tokens.db.Point;
 import network.balanced.score.tokens.utils.UnsignedBigInteger;
@@ -32,14 +34,13 @@ import score.annotation.External;
 import score.annotation.Optional;
 import scorex.util.ArrayList;
 
-import java.lang.annotation.Native;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static network.balanced.score.lib.utils.Check.onlyOwner;
-import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.BalancedAddressManager.getBaln;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
+import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.EOA_ZERO;
 import static network.balanced.score.lib.utils.Math.convertToNumber;
 import static network.balanced.score.lib.utils.NonReentrant.globalReentryLock;
@@ -169,6 +170,11 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         this.checkpoint(getStringNetworkAddress(EOA_ZERO), new LockedBalance(), new LockedBalance());
     }
 
+    public void checkpoint(String from) {
+        checkStatus();
+        this.checkpoint(getStringNetworkAddress(EOA_ZERO), new LockedBalance(), new LockedBalance());
+    }
+
     @External
     public void xTokenFallback(String _from, BigInteger _value, byte[] _data) {
         checkStatus();
@@ -229,15 +235,20 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         }
     }
 
-    //todo: crosschain method also required
     @External
     public void increaseUnlockTime(BigInteger unlockTime) {
+        increaseUnlockTimeInternal(getStringNetworkAddress(Context.getCaller()), unlockTime);
+    }
+
+    public void xIncreaseUnlockTime(String from, BigInteger unlockTime){
+        increaseUnlockTimeInternal(from, unlockTime);
+    }
+
+    private void increaseUnlockTimeInternal(String stingSender, BigInteger unlockTime){
         checkStatus();
         globalReentryLock();
-        Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
-        String stingSender = getStringNetworkAddress(sender);
         LockedBalance locked = getLockedBalance(stingSender);
         unlockTime = unlockTime.divide(WEEK_IN_MICRO_SECONDS).multiply(WEEK_IN_MICRO_SECONDS);
 
@@ -253,9 +264,16 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void kick(Address user) {
+        kickInternal(getStringNetworkAddress(user));
+    }
+
+    public void xKick(String from){
+        kickInternal(from);
+    }
+
+    private void kickInternal(String stringUser){
         checkStatus();
-        String stringUser = getStringNetworkAddress(user);
-        BigInteger bBalnBalance = balanceOf(user, BigInteger.ZERO);
+        BigInteger bBalnBalance = xBalanceOf(stringUser, BigInteger.ZERO);
         if (bBalnBalance.equals(BigInteger.ZERO)) {
             onKick(stringUser);
         } else {
@@ -265,60 +283,80 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
 
     @External
     public void withdraw() {
+        withdrawInternal(getStringNetworkAddress(Context.getCaller()));
+    }
+
+
+    private void withdrawInternal(String senderAddress){
         checkStatus();
         globalReentryLock();
-        Address sender = Context.getCaller();
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
-        String senderAddress = getStringNetworkAddress(sender);
-        LockedBalance locked = getLockedBalance(senderAddress);
-        Context.require(blockTimestamp.compareTo(locked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
-        BigInteger value = locked.amount;
+        LockedBalance balanceLocked = getLockedBalance(senderAddress);
+        Context.require(blockTimestamp.compareTo(balanceLocked.getEnd()) >= 0, "Withdraw: The lock haven't expire");
+        BigInteger value = balanceLocked.amount;
 
-        LockedBalance oldLocked = locked.newLockedBalance();
-        locked.end = UnsignedBigInteger.ZERO;
-        locked.amount = BigInteger.ZERO;
+        LockedBalance oldLocked = balanceLocked.newLockedBalance();
+        balanceLocked.end = UnsignedBigInteger.ZERO;
+        balanceLocked.amount = BigInteger.ZERO;
 
-        this.locked.set(senderAddress, locked);
+        locked.set(senderAddress, balanceLocked);
         BigInteger supplyBefore = this.supply.get();
         this.supply.set(supplyBefore.subtract(value));
 
-        this.checkpoint(senderAddress, oldLocked, locked);
+        this.checkpoint(senderAddress, oldLocked, balanceLocked);
 
-        //Context.call(getBaln(), "transfer", sender, value, "withdraw".getBytes());
         TokenTransfer.transfer(getBaln(), senderAddress, value, "withdraw".getBytes());
 
         users.remove(senderAddress);
-        Withdraw(sender, value, blockTimestamp);
+        WithdrawV2(senderAddress, value, blockTimestamp);
         Supply(supplyBefore, supplyBefore.subtract(value));
         onKick(senderAddress);
     }
 
-    //todo: crosschain method also required
+    @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        checkStatus();
+        only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        BoostedBalnXCall.process(this, _from, _data);
+    }
+
+    public void xWithdrawEarly(String _from) {
+        withdrawEarlyInternal(_from);
+    }
+
+    public void xWithdraw(String _from) {
+        xWithdraw(_from);
+    }
+
     @External
     public void withdrawEarly() {
+        withdrawEarlyInternal(getStringNetworkAddress(Context.getCaller()));
+    }
+
+    private void withdrawEarlyInternal(String senderAddress){
         checkStatus();
         globalReentryLock();
         Address sender = Context.getCaller();
-        String senderAddress = getStringNetworkAddress(sender);
         BigInteger blockTimestamp = BigInteger.valueOf(Context.getBlockTimestamp());
 
-        LockedBalance locked = getLockedBalance(senderAddress);
-        Context.require(blockTimestamp.compareTo(locked.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw " +
+        LockedBalance lockedBalance = getLockedBalance(senderAddress);
+        Context.require(blockTimestamp.compareTo(lockedBalance.getEnd()) < 0, "Withdraw: The lock has expired, use withdraw " +
                 "method");
-        BigInteger value = locked.amount;
+        BigInteger value = lockedBalance.amount;
         BigInteger maxPenalty = value.divide(BigInteger.TWO);
         BigInteger variablePenalty = balanceOf(sender, null);
         BigInteger penaltyAmount = variablePenalty.min(maxPenalty);
         BigInteger returnAmount = value.subtract(penaltyAmount);
 
-        LockedBalance oldLocked = locked.newLockedBalance();
-        locked.end = UnsignedBigInteger.ZERO;
-        locked.amount = BigInteger.ZERO;
-        this.locked.set(senderAddress, locked);
+        LockedBalance oldLocked = lockedBalance.newLockedBalance();
+        lockedBalance.end = UnsignedBigInteger.ZERO;
+        lockedBalance.amount = BigInteger.ZERO;
+        locked.set(senderAddress, lockedBalance);
         BigInteger supplyBefore = this.supply.get();
         this.supply.set(supplyBefore.subtract(value));
 
-        this.checkpoint(senderAddress, oldLocked, locked);
+        this.checkpoint(senderAddress, oldLocked, lockedBalance);
 
 
         Context.call(getBaln(), "transfer", this.penaltyAddress.get(), penaltyAmount,

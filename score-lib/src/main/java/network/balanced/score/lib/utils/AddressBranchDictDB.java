@@ -9,8 +9,8 @@ import score.DictDB;
 
 public class AddressBranchDictDB<K, V> {
 
-    private BranchDB<Address, DictDB<K, V>> legacyAddressDictDB;
-    private BranchDB<String, DictDB<K, V>> addressDictDB;
+    private final BranchDB<Address, DictDB<K, V>> legacyAddressDictDB;
+    private final BranchDB<String, DictDB<K, V>> addressDictDB;
 
     public AddressBranchDictDB(String id, Class<V> valueClass) {
         this.legacyAddressDictDB = Context.newBranchDB(id, valueClass);
