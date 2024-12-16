@@ -117,7 +117,7 @@ public class BoostedBalnGeneralIntegrationTest implements ScoreIntegrationTest {
         assertEquals(totalLocked.divide(EXA),
                 availableBalnBalance.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4)).divide(EXA));
 
-        List<Address> users = owner.boostedBaln.getUsers(0, 100);
+        List<String> users = owner.boostedBaln.getUsers(0, 100);
         assert users.size() == 1;
         assertEquals(users.get(0), owner.getAddress());
 

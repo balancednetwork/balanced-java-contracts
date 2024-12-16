@@ -16,6 +16,10 @@
 
 package network.balanced.score.core.dividends;
 
+import foundation.icon.xcall.NetworkAddress;
+import network.balanced.score.lib.utils.AddressDictDB;
+import network.balanced.score.lib.utils.BranchedNetworkAddressDictDB;
+import network.balanced.score.lib.utils.NetworkAddressBranchDictDB;
 import score.*;
 
 import java.math.BigInteger;
@@ -24,32 +28,35 @@ import static network.balanced.score.core.dividends.Constants.*;
 import static network.balanced.score.lib.utils.Constants.EXA;
 
 public class DividendsTracker {
-    protected static final BranchDB<Address, DictDB<Address, BigInteger>> userWeight = Context.newBranchDB(
+    protected static final NetworkAddressBranchDictDB<Address, BigInteger> userWeight = new NetworkAddressBranchDictDB<>(
             "user_weight", BigInteger.class);
     private static final VarDB<BigInteger> totalSupply = Context.newVarDB("balnSupply", BigInteger.class);
     private static final DictDB<Address, BigInteger> totalWeight = Context.newDictDB("running_total",
             BigInteger.class);
 
-    private static final BranchDB<Address, DictDB<Address, BigInteger>> boostedUserWeight =
-            Context.newBranchDB(BBALN_USER_WEIGHT, BigInteger.class);
+    private static final NetworkAddressBranchDictDB<Address, BigInteger> boostedUserWeight =
+            new NetworkAddressBranchDictDB<>(BBALN_USER_WEIGHT, BigInteger.class);
     private static final DictDB<Address, BigInteger> boostedTotalWeight = Context.newDictDB(BBALN_TOTAL_WEIGHT,
             BigInteger.class);
-    protected static final DictDB<Address, BigInteger> userBalance = Context.newDictDB(USER_BBALN_BALANCE,
+
+    protected static final AddressDictDB<BigInteger> userBalance = new AddressDictDB<>(USER_BBALN_BALANCE,
             BigInteger.class);
+    
     private static final VarDB<BigInteger> boostedTotalSupply = Context.newVarDB(BBALN_SUPPLY, BigInteger.class);
-    protected static final BranchDB<Address, DictDB<Address, Boolean>> balnRewardsClaimed = Context.newBranchDB(
+
+    protected static final BranchedNetworkAddressDictDB<Address, Boolean> balnRewardsClaimed = new BranchedNetworkAddressDictDB<>(
             "baln_to_bBaln_migration_check", Boolean.class);
 
-    public static BigInteger getUserWeight(Address user, Address token) {
-        return userWeight.at(user).getOrDefault(token, BigInteger.ZERO);
+    public static BigInteger getUserWeight(String user, Address token) {
+        return userWeight.getOrDefault(NetworkAddress.valueOf(user), token, BigInteger.ZERO);
     }
 
     public static void setTotalSupply(BigInteger supply) {
         totalSupply.set(supply);
     }
 
-    public static BigInteger getUserBoostedWeight(Address user, Address token) {
-        return boostedUserWeight.at(user).getOrDefault(token, BigInteger.ZERO);
+    public static BigInteger getUserBoostedWeight(String user, Address token) {
+        return boostedUserWeight.getOrDefault(NetworkAddress.valueOf(user), token, BigInteger.ZERO);
     }
 
     public static BigInteger getBoostedTotalSupply() {
@@ -68,28 +75,28 @@ public class DividendsTracker {
         return boostedTotalWeight.getOrDefault(token, BigInteger.ZERO);
     }
 
-    public static Boolean balnRewardsClaimed(Address user, Address token) {
-        return balnRewardsClaimed.at(token).getOrDefault(user, false);
+    public static Boolean balnRewardsClaimed(String user, Address token) {
+        return balnRewardsClaimed.at(token).getOrDefault(NetworkAddress.valueOf(user), false);
     }
 
-    public static BigInteger updateUserData(Address token, Address user, BigInteger prevBalance,
+    public static BigInteger updateUserData(Address token, String user, BigInteger prevBalance,
                                             boolean readOnlyContext) {
         BigInteger currentUserWeight = getUserWeight(user, token);
         BigInteger totalWeight = getTotalWeight(token);
         if (!readOnlyContext) {
-            userWeight.at(user).set(token, totalWeight);
-            balnRewardsClaimed.at(token).set(user, true);
+            userWeight.set(NetworkAddress.valueOf(user), token, totalWeight);
+            balnRewardsClaimed.at(token).set(NetworkAddress.valueOf(user), true);
         }
 
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);
     }
 
-    public static BigInteger updateBoostedUserData(Address token, Address user, BigInteger prevBalance,
+    public static BigInteger updateBoostedUserData(Address token, String user, BigInteger prevBalance,
                                                    boolean readOnlyContext) {
         BigInteger currentUserWeight = getUserBoostedWeight(user, token);
         BigInteger totalWeight = getBoostedTotalWeight(token);
         if (!readOnlyContext) {
-            boostedUserWeight.at(user).set(token, totalWeight);
+            boostedUserWeight.set(NetworkAddress.valueOf(user), token, totalWeight);
         }
 
         return computeUserRewards(prevBalance, totalWeight, currentUserWeight);

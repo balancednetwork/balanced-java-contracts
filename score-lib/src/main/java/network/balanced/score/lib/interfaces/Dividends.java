@@ -36,10 +36,10 @@ import java.util.Map;
 @ScoreInterface
 public interface Dividends extends Name, TokenFallback, AddressManager, Version {
     @External
-    void onBalanceUpdate(Address user, BigInteger bBalnBalance);
+    void onBalanceUpdate(String user, BigInteger bBalnBalance);
 
     @External
-    void onKick(Address user);
+    void onKick(String user);
 
     @External
     void setTimeOffset(BigInteger deltaTime);
@@ -115,9 +115,6 @@ public interface Dividends extends Name, TokenFallback, AddressManager, Version 
 
     @External
     void accumulateDividends(Address user, @Optional int _start, @Optional int _end);
-
-    @External
-    void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply);
 
     @External(readonly = true)
     Map<String, BigInteger> getUserDividends(Address _account, @Optional int _start, @Optional int _end);

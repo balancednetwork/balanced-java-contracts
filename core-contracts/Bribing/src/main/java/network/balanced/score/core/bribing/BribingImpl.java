@@ -16,7 +16,10 @@
 
 package network.balanced.score.core.bribing;
 
-import network.balanced.score.lib.utils.Versions;
+import foundation.icon.xcall.NetworkAddress;
+import network.balanced.score.lib.interfaces.BribingXCall;
+import network.balanced.score.lib.interfaces.GovernanceXCall;
+import network.balanced.score.lib.utils.*;
 import score.*;
 import score.annotation.External;
 
@@ -29,7 +32,9 @@ import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import score.annotation.Optional;
 
+import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
 import static network.balanced.score.lib.utils.Check.*;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 import static network.balanced.score.lib.utils.Constants.EXA;
@@ -51,7 +56,9 @@ public class BribingImpl implements Bribing {
     //Source->bribeToken->period
     public static final BranchDB<String, DictDB<Address, BigInteger>> activePeriod = Context.newBranchDB("activePeriod", BigInteger.class);
     //userAddress->Source->bribeToken->timeOfLastClaim
-    public static final BranchDB<Address, BranchDB<String, DictDB<Address, BigInteger>>> lastUserClaim = Context.newBranchDB("lastUserClaim", BigInteger.class);
+    //public static final BranchDB<Address, BranchDB<String, DictDB<Address, BigInteger>>> lastUserClaim = Context.newBranchDB("lastUserClaim", BigInteger.class);
+    public static final NetworkAddressBranchedStringBranchDictDB<String, Address, BigInteger> lastUserClaim = new NetworkAddressBranchedStringBranchDictDB<>("lastUserClaim", BigInteger.class);
+
 
     public static final BranchDB<String, ArrayDB<Address>> bribesPerSource = Context.newBranchDB("bribesPerSource", Address.class);
     public static final BranchDB<Address, ArrayDB<String>> sourcesPerBribe = Context.newBranchDB("sourcesPerBribe", String.class);
@@ -61,6 +68,8 @@ public class BribingImpl implements Bribing {
     private final VarDB<String> currentVersion = Context.newVarDB("version", String.class);
     private final VarDB<BigInteger> migrationPeriod = Context.newVarDB("migration_period", BigInteger.class);
 
+    public static String NATIVE_NID;
+    
     private class SourceStatus {
         BigInteger period;
         BigInteger bribesPerToken;
@@ -78,6 +87,7 @@ public class BribingImpl implements Bribing {
             Context.revert("Can't Update same version of code");
         }
         this.currentVersion.set(Versions.BRIBING);
+        NATIVE_NID = Context.call(String.class, getXCall(), "getNetworkId");
     }
 
     @External(readonly=true)
@@ -148,7 +158,14 @@ public class BribingImpl implements Bribing {
 
     @External(readonly=true)
     public BigInteger claimable(Address user, String source, Address bribeToken) {
-        return getBribesAmount(user, source, bribeToken, true);
+        String networkAddress = new NetworkAddress(NATIVE_NID, user).toString();
+        return getBribesAmount(networkAddress, source, bribeToken, true);
+    }
+
+    @External(readonly=true)
+    public BigInteger xClaimable(String user, String source, Address bribeToken) {
+        String networkAddress = NetworkAddress.valueOf(user, NATIVE_NID).toString();
+        return getBribesAmount(networkAddress, source, bribeToken, true);
     }
 
     @External
@@ -159,11 +176,28 @@ public class BribingImpl implements Bribing {
     @External
     public void claimBribe(String source, Address bribeToken) {
         Address user = Context.getCaller();
-        BigInteger amount = getBribesAmount(user, source, bribeToken, false);
-        Context.require(amount.compareTo(BigInteger.ZERO) > 0, user.toString() + " has no bribe in " + bribeToken.toString() + " to  claim for source: " + source);
+        String networkAddress = new NetworkAddress(NATIVE_NID, user).toString();
+        BigInteger amount = getBribesAmount(networkAddress, source, bribeToken, false);
+        Context.require(amount.compareTo(BigInteger.ZERO) > 0, user + " has no bribe in " + bribeToken.toString() + " to  claim for source: " + source);
         BigInteger prevClaims = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
         claimsPerSource.at(source).set(bribeToken, prevClaims.add(amount));
         Context.call(bribeToken, "transfer", user, amount, new byte[0]);
+    }
+
+    @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        Check.checkStatus();
+        only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        BribingXCall.process(this, _from, _data);
+    }
+
+    public void xClaimTo(String from, String source, Address bribeToken) {
+        BigInteger amount = getBribesAmount(from, source, bribeToken, false);
+        Context.require(amount.compareTo(BigInteger.ZERO) > 0, from + " has no bribe in " + bribeToken.toString() + " to  claim for source: " + source);
+        BigInteger prevClaims = claimsPerSource.at(source).getOrDefault(bribeToken, BigInteger.ZERO);
+        claimsPerSource.at(source).set(bribeToken, prevClaims.add(amount));
+        TokenTransfer.transfer(bribeToken, from, amount);
     }
 
     @External
@@ -219,18 +253,19 @@ public class BribingImpl implements Bribing {
         add(source, bribeToken);
     }
 
-    private BigInteger getBribesAmount(Address user, String source, Address bribeToken, boolean readonly) {
+    private BigInteger getBribesAmount(String user, String source, Address bribeToken, boolean readonly) {
         SourceStatus status = updateSource(source, bribeToken, readonly);
-        DictDB<Address, BigInteger> lastUserClaim = BribingImpl.lastUserClaim.at(user).at(source);
-        if (lastUserClaim.getOrDefault(bribeToken, BigInteger.ZERO).compareTo(status.period) >= 0) {
+        NetworkAddress userNetworkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        BigInteger lastUserClaimAmount = BribingImpl.lastUserClaim.getOrDefault(userNetworkAddress, source, bribeToken, BigInteger.ZERO);
+        if (lastUserClaimAmount.compareTo(status.period) >= 0) {
             return BigInteger.ZERO;
         }
 
         if (!readonly) {
-            lastUserClaim.set(bribeToken, status.period);
+            lastUserClaim.set(userNetworkAddress, source, bribeToken, status.period);
         }
 
-        BigInteger lastVote = Context.call(BigInteger.class, rewards.get(), "getLastUserVote", user, source);
+        BigInteger lastVote = Context.call(BigInteger.class, rewards.get(), "getLastUserVoteV2", user, source);
 
         if (lastVote.compareTo(status.period) >= 0) {
             return BigInteger.ZERO;
@@ -298,12 +333,12 @@ public class BribingImpl implements Bribing {
     }
 
 
-    public Map<String, BigInteger> getUserSlope(Address user, String source) {
-        Map<String, BigInteger> userSlope  = (Map<String, BigInteger>)Context.call(rewards.get(), "getUserSlope", user, source);
+    public Map<String, BigInteger> getUserSlope(String user, String source) {
+        Map<String, BigInteger> userSlope  = (Map<String, BigInteger>)Context.call(rewards.get(), "getUserSlopeV2", user, source);
         return userSlope;
     }
 
-    public BigInteger calculateUserBias(Address user, String source) {
+    public BigInteger calculateUserBias(String user, String source) {
         BigInteger period = getCurrentPeriod();
         Map<String, BigInteger> userSlope = getUserSlope(user, source);
         BigInteger end = userSlope.get("end");

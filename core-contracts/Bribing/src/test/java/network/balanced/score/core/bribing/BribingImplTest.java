@@ -27,6 +27,7 @@ import static org.mockito.Mockito.any;
 import java.math.BigInteger;
 import java.util.Map;
 
+import foundation.icon.xcall.NetworkAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -55,9 +56,9 @@ class BribingImplTest extends BribingImplTestBase {
         // Act
         addBribe(source, amount);
 
-        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
 
-        doReturn(userWeight).when(bribingSpy).calculateUserBias(user.getAddress(), source);
+        doReturn(userWeight).when(bribingSpy).calculateUserBias(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source);
 
         assertEquals(BigInteger.ZERO, bribing.call("claimable", user.getAddress(), source, bribeToken.getAddress()));
 
@@ -103,8 +104,8 @@ class BribingImplTest extends BribingImplTestBase {
         addBribe(source, amount);
 
         // Assert
-        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        doReturn(userWeight).when(bribingSpy).calculateUserBias(user.getAddress(), source);
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        doReturn(userWeight).when(bribingSpy).calculateUserBias(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source);
 
         sm.getBlock().increase(WEEK);
         doReturn(totalWeight).when(bribingSpy).getSourceBias(source, getPeriod());
@@ -131,8 +132,8 @@ class BribingImplTest extends BribingImplTestBase {
         addBribe(source, amount);
 
         // Assert
-        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
-        doReturn(userWeight).when(bribingSpy).calculateUserBias(user.getAddress(), source);
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source)).thenReturn(startPeriod.add(BigInteger.ONE));
+        doReturn(userWeight).when(bribingSpy).calculateUserBias(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source);
 
         sm.getBlock().increase(WEEK);
          doReturn(totalWeight).when(bribingSpy).getSourceBias(source, getPeriod());
@@ -168,8 +169,8 @@ class BribingImplTest extends BribingImplTestBase {
         // Act
         addBribe(source, amount);
 
-        when(rewards.mock.getLastUserVote(user.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        doReturn(userWeight).when(bribingSpy).calculateUserBias(user.getAddress(), source);
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        doReturn(userWeight).when(bribingSpy).calculateUserBias(new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), source);
 
         sm.getBlock().increase(WEEK);
          doReturn(totalWeight).when(bribingSpy).getSourceBias(source, getPeriod());;
@@ -210,10 +211,10 @@ class BribingImplTest extends BribingImplTestBase {
         scheduledBribes(source, total, amounts);
 
         // Assert
-        when(rewards.mock.getLastUserVote(user1.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        doReturn(userWeight).when(bribingSpy).calculateUserBias(user1.getAddress(), source);
-        when(rewards.mock.getLastUserVote(user2.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        doReturn(userWeight).when(bribingSpy).calculateUserBias(user2.getAddress(), source);
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user1.getAddress()).toString(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        doReturn(userWeight).when(bribingSpy).calculateUserBias(new NetworkAddress(NATIVE_NID, user1.getAddress()).toString(), source);
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user2.getAddress()).toString(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        doReturn(userWeight).when(bribingSpy).calculateUserBias(new NetworkAddress(NATIVE_NID, user2.getAddress()).toString(), source);
 
         for (int i = 0; i < 4; i++) {
             sm.getBlock().increase(WEEK);
@@ -286,10 +287,10 @@ class BribingImplTest extends BribingImplTestBase {
             "slope", new BigInteger("2c9bb4a", 16)
         );
 
-        doReturn(user1Slope).when(bribingSpy).getUserSlope(user1.getAddress(), source);
-        doReturn(user2Slope).when(bribingSpy).getUserSlope(user2.getAddress(), source);
-        when(rewards.mock.getLastUserVote(user1.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
-        when(rewards.mock.getLastUserVote(user2.getAddress(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        doReturn(user1Slope).when(bribingSpy).getUserSlope(new NetworkAddress(NATIVE_NID, user1.getAddress()).toString(), source);
+        doReturn(user2Slope).when(bribingSpy).getUserSlope(new NetworkAddress(NATIVE_NID, user2.getAddress()).toString(), source);
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user1.getAddress()).toString(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
+        when(rewards.mock.getLastUserVoteV2(new NetworkAddress(NATIVE_NID, user2.getAddress()).toString(), source)).thenReturn(startPeriod.subtract(BigInteger.ONE));
 
         // Act
         doReturn(period.subtract(WEEK_IN_MS)).when(bribingSpy).getBlockTime();

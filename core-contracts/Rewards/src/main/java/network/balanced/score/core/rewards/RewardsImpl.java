@@ -162,6 +162,7 @@ public class RewardsImpl implements Rewards {
     public Map<String, BigInteger> getBalnHoldings(String[] _holders) {
         Map<String, BigInteger> holdings = new HashMap<>();
         for (String address : _holders) {
+            address = NetworkAddress.valueOf(address, NATIVE_NID).toString();
             holdings.put(address, balnHoldings.getOrDefault(address, BigInteger.ZERO));
         }
 
@@ -186,12 +187,14 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public BigInteger getBalnHolding(String _holder) {
+        _holder = NetworkAddress.valueOf(_holder, NATIVE_NID).toString();
         Address baln = getBaln();
         return getRewards(_holder).get(baln.toString());
     }
 
     @External(readonly = true)
     public Map<String, BigInteger> getRewards(String _holder) {
+        _holder = NetworkAddress.valueOf(_holder, NATIVE_NID).toString();
         Map<String, BigInteger> accruedRewards = getHoldings(_holder);
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
@@ -248,6 +251,7 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public Map<String, Map<String, Object>> getUserSourceData(String user) {
+        user = NetworkAddress.valueOf(user, NATIVE_NID).toString();
         Map<String, Map<String, Object>> dataSources = new HashMap<>();
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
@@ -302,6 +306,7 @@ public class RewardsImpl implements Rewards {
     @External(readonly = true)
     public Map<String, BigInteger> getWorkingBalanceAndSupply(String _name, String _user) {
         DataSourceImpl datasource = DataSourceDB.get(_name);
+        _user = NetworkAddress.valueOf(_user, NATIVE_NID).toString();
         return Map.of(
                 "workingSupply", datasource.getWorkingSupply(true),
                 "workingBalance", datasource.getWorkingBalance(_user, true)
@@ -313,7 +318,7 @@ public class RewardsImpl implements Rewards {
         if (sources == null) {
             sources = getAllSources();
         }
-
+        user = NetworkAddress.valueOf(user, NATIVE_NID).toString();
         Map<String, Map<String, BigInteger>> boostData = new HashMap<>();
         for (String name : sources) {
             Map<String, BigInteger> sourceData = new HashMap<>();
@@ -382,11 +387,19 @@ public class RewardsImpl implements Rewards {
 
     @External
     public void boost(String[] sources) {
-        checkStatus();
         Address user = Context.getCaller();
+        boostInternal(new NetworkAddress(NATIVE_NID, user).toString(), sources);
+    }
+
+    public void xBoost(String from, String[] sources) {
+        boostInternal(from, sources);
+    }
+
+    public void boostInternal(String user, String[] sources){
+        checkStatus();
         BigInteger boostedBalance = fetchBoostedBalance(user);
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user.toString(), sources, boostedBalance, boostedSupply);
+        updateAllUserRewards(user, sources, boostedBalance, boostedSupply);
     }
 
     @External
@@ -410,7 +423,8 @@ public class RewardsImpl implements Rewards {
         if (sources == null || sources.length == 0) {
             sources = getAllSources();
         }
-        _claimRewards(Context.getCaller().toString(), sources);
+        String networkAddress = NetworkAddress.valueOf(Context.getCaller().toString(), NATIVE_NID).toString();
+        _claimRewards(networkAddress, sources);
     }
 
     private void _claimRewards(String address, String[] sources) {
@@ -523,9 +537,9 @@ public class RewardsImpl implements Rewards {
 
         BigInteger currentTime = getTime();
         distribute();
-        String user = _user.toString();
+        String user = new NetworkAddress(NATIVE_NID, _user).toString();
         BalanceData balances = new BalanceData();
-        balances.boostedBalance = fetchBoostedBalance(_user);
+        balances.boostedBalance = fetchBoostedBalance(user);
         balances.boostedSupply = fetchBoostedSupply();
         Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
         balances.balance = balanceAndSupply.get(BALANCE);
@@ -554,8 +568,8 @@ public class RewardsImpl implements Rewards {
         for (RewardsDataEntryOld entry : _data) {
             BalanceData balances = new BalanceData();
             balances.boostedSupply = boostedSupply;
-            balances.boostedBalance = fetchBoostedBalance(entry._user);
-            String user = entry._user.toString();
+            String user = new NetworkAddress(NATIVE_NID, entry._user).toString();
+            balances.boostedBalance = fetchBoostedBalance(user);
             Map<String, BigInteger> balanceAndSupply = dataSource.loadCurrentSupply(user);
             balances.balance = balanceAndSupply.get(BALANCE);
             balances.supply = balanceAndSupply.get(TOTAL_SUPPLY);
@@ -577,6 +591,7 @@ public class RewardsImpl implements Rewards {
 
         BigInteger currentTime = getTime();
         distribute();
+        _user  = NetworkAddress.valueOf(_user, NATIVE_NID).toString();
 
         BalanceData balances = new BalanceData();
         balances.boostedBalance = fetchBoostedBalance(_user);
@@ -629,9 +644,10 @@ public class RewardsImpl implements Rewards {
     @External
     public void kick(Address user, String[] sources) {
         checkStatus();
-        BigInteger boostedBalance = fetchBoostedBalance(user);
+        String networkAddress = new NetworkAddress(NATIVE_NID, user).toString();
+        BigInteger boostedBalance = fetchBoostedBalance(networkAddress);
         BigInteger boostedSupply = fetchBoostedSupply();
-        updateAllUserRewards(user.toString(), sources, boostedBalance, boostedSupply);
+        updateAllUserRewards(networkAddress, sources, boostedBalance, boostedSupply);
     }
 
     @External
@@ -658,6 +674,7 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public String[] getUserSources(String user) {
+        user = NetworkAddress.valueOf(user, NATIVE_NID).toString();
         int dataSourcesCount = DataSourceDB.size();
         List<String> sources = new ArrayList<>();
         for (int i = 0; i < dataSourcesCount; i++) {
@@ -781,7 +798,12 @@ public class RewardsImpl implements Rewards {
     @External
     public void voteForSource(String name, BigInteger userWeight) {
         checkStatus();
-        SourceWeightController.voteForSourceWeights(name, userWeight);
+        SourceWeightController.voteForSourceWeights(new NetworkAddress(NATIVE_NID, Context.getCaller()).toString(), name, userWeight);
+    }
+
+    public void xVoteForSource(String from, String name, BigInteger userWeight) {
+        checkStatus();
+        SourceWeightController.voteForSourceWeights(from, name, userWeight);
     }
 
     @External(readonly = true)
@@ -815,12 +837,26 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public VotedSlope getUserSlope(Address user, String source) {
-        return SourceWeightController.getUserSlope(user, source);
+        NetworkAddress networkAddress = new NetworkAddress(NATIVE_NID, user);
+        return SourceWeightController.getUserSlope(networkAddress, source);
+    }
+
+    @External(readonly = true)
+    public VotedSlope getUserSlopeV2(String user, String source) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        return SourceWeightController.getUserSlope(networkAddress, source);
     }
 
     @External(readonly = true)
     public BigInteger getLastUserVote(Address user, String source) {
-        return SourceWeightController.getLastUserVote(user, source);
+        NetworkAddress networkAddress = new NetworkAddress(NATIVE_NID, user);
+        return SourceWeightController.getLastUserVote(networkAddress, source);
+    }
+
+    @External(readonly = true)
+    public BigInteger getLastUserVoteV2(String user, String source) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        return SourceWeightController.getLastUserVote(networkAddress, source);
     }
 
     @External(readonly = true)
@@ -840,14 +876,25 @@ public class RewardsImpl implements Rewards {
 
     @External(readonly = true)
     public Map<String, Map<String, BigInteger>> getUserVoteData(Address user) {
+        NetworkAddress networkAddress = new NetworkAddress(NATIVE_NID, user);
+        return getUserVoteDataInternal(networkAddress);
+    }
+
+    @External(readonly = true)
+    public Map<String, Map<String, BigInteger>> getUserVoteDataV2(String user) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
+        return getUserVoteDataInternal(networkAddress);
+    }
+
+    private Map<String, Map<String, BigInteger>> getUserVoteDataInternal(NetworkAddress networkAddress){
         Map<String, Map<String, BigInteger>> data = new HashMap<>();
         BigInteger currentTime = BigInteger.valueOf(Context.getBlockTimestamp());
 
         int dataSourcesCount = DataSourceDB.size();
         for (int i = 0; i < dataSourcesCount; i++) {
             String source = DataSourceDB.names.get(i);
-            VotedSlope votedSlope = getUserSlope(user, source);
-            BigInteger lastVote = SourceWeightController.getLastUserVote(user, source);
+            VotedSlope votedSlope = SourceWeightController.getUserSlope(networkAddress, source);
+            BigInteger lastVote = SourceWeightController.getLastUserVote(networkAddress, source);
             BigInteger timeSinceLastVote = currentTime.subtract(lastVote);
             if (timeSinceLastVote.compareTo(SourceWeightController.WEIGHT_VOTE_DELAY) > 0 && votedSlope.power.equals(BigInteger.ZERO)) {
                 continue;
@@ -1020,21 +1067,8 @@ public class RewardsImpl implements Rewards {
 
     private BigInteger fetchBoostedBalance(String user) {
         NetworkAddress networkAddress = NetworkAddress.valueOf(user, NATIVE_NID);
-        Address address = null;
         try {
-            address = Address.fromString(user);
-        } catch (Exception ignored) {
-        }
-        if (!networkAddress.net().equals(NATIVE_NID) || address == null) {
-            return BigInteger.ZERO;
-        }
-
-        return fetchBoostedBalance(address);
-    }
-
-    private BigInteger fetchBoostedBalance(Address user) {
-        try {
-            return (BigInteger) RewardsImpl.call(getBoostedBaln(), "xBalanceOf", user, BigInteger.ZERO);
+            return (BigInteger) RewardsImpl.call(getBoostedBaln(), "xBalanceOf", networkAddress.toString(), BigInteger.ZERO);
         } catch (Exception e) {
             return BigInteger.ZERO;
         }
@@ -1084,6 +1118,10 @@ public class RewardsImpl implements Rewards {
 
     @EventLog(indexed = 2)
     public void VoteForSource(String sourceName, Address user, BigInteger weight, BigInteger time) {
+    }
+
+    @EventLog(indexed = 2)
+    public void VoteForSourceV2(String sourceName, String user, BigInteger weight, BigInteger time) {
     }
 
     @EventLog(indexed = 1)

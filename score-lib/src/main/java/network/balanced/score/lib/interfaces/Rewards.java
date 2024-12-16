@@ -82,6 +82,9 @@ public interface Rewards extends
     @External
     void boost(String[] sources);
 
+    @XCall
+    void xBoost(String from, String[] sources);
+
     @External
     void claimRewards(@Optional String[] sources);
 

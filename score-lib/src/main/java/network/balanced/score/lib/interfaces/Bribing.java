@@ -18,10 +18,12 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.RewardsAddress;
 import network.balanced.score.lib.interfaces.base.Version;
 import score.Address;
 import score.annotation.External;
+import score.annotation.Optional;
 
 import java.math.BigInteger;
 
@@ -55,11 +57,20 @@ public interface Bribing extends RewardsAddress, Version {
     @External(readonly=true)
     BigInteger claimable(Address user, String source, Address bribeToken);
 
+    @External(readonly=true)
+    BigInteger xClaimable(String user, String source, Address bribeToken);
+
     @External
     void updatePeriod(String source, Address bribeToken);
 
     @External
     void claimBribe(String source, Address bribeToken);
+
+    @External
+    void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols);
+
+    @XCall
+    void xClaimTo(String from, String source, Address bribeToken);
 
     @External
     void tokenFallback(Address _from, BigInteger _value, byte[] _data);

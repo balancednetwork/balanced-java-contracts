@@ -20,6 +20,7 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.utils.Names;
@@ -33,6 +34,7 @@ import org.mockito.Mockito;
 import score.Address;
 import score.Context;
 
+import java.lang.annotation.Native;
 import java.math.BigInteger;
 import java.util.Map;
 
@@ -113,13 +115,13 @@ class RewardsTestBase extends UnitTest {
         );
         when(loans.mock.getBalanceAndSupply(any(String.class), any(String.class))).thenReturn(emptyDataSource);
         when(dex.mock.getBalanceAndSupply(any(String.class), any(String.class))).thenReturn(emptyDataSource);
-        when(bBaln.mock.balanceOf(any(Address.class), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
+        when(bBaln.mock.xBalanceOf(any(String.class), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
         when(bBaln.mock.totalSupply(any(BigInteger.class))).thenReturn(BigInteger.ZERO);
 
 
         BigInteger currentTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger unlockTime = currentTime.add(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(365)));
-        when(bBaln.mock.lockedEnd(any(Address.class))).thenReturn(unlockTime);
+        when(bBaln.mock.lockedEndV2(any(String.class))).thenReturn(unlockTime);
         sm.getBlock().increase(DAY);
 
         mockUserWeight(user, EXA);
@@ -157,8 +159,8 @@ class RewardsTestBase extends UnitTest {
                 "_balance", balance,
                 "_totalSupply", supply
         );
-
-        when(dataSource.mock.getBalanceAndSupply(name, address.toString())).thenReturn(balanceAndSupply);
+        String addressNetworkAddress = new NetworkAddress(NATIVE_NID, address).toString();
+        when(dataSource.mock.getBalanceAndSupply(name, addressNetworkAddress)).thenReturn(balanceAndSupply);
     }
 
     void mockBalanceAndSupply(MockContract<? extends DataSource> dataSource, String name, String address,
@@ -179,16 +181,18 @@ class RewardsTestBase extends UnitTest {
     }
 
     BigInteger getOneDayRewards(Address address) {
-        BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", address.toString());
+        String networkAddress = new NetworkAddress(NATIVE_NID, address.toString()).toString();
+        BigInteger rewardsPre = (BigInteger) rewardsScore.call("getBalnHolding", networkAddress);
         sm.getBlock().increase(DAY);
         rewardsScore.invoke(owner, "distribute");
-        BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", address.toString());
+        BigInteger rewardsPost = (BigInteger) rewardsScore.call("getBalnHolding", networkAddress);
 
         return rewardsPost.subtract(rewardsPre);
     }
 
     Object getUserSources(Address address) {
-        return rewardsScore.call("getUserSources", address.toString());
+        String networkAddress = new NetworkAddress(NATIVE_NID, address.toString()).toString();
+        return rewardsScore.call("getUserSources", networkAddress);
     }
 
     void vote(Account user, String name, BigInteger weight) {
@@ -196,7 +200,7 @@ class RewardsTestBase extends UnitTest {
     }
 
     void mockUserWeight(Account user, BigInteger weight) {
-        when(bBaln.mock.getLastUserSlope(user.getAddress())).thenReturn(weight);
+        when(bBaln.mock.getLastUserSlopeV2(new NetworkAddress(NATIVE_NID, user.getAddress()).toString())).thenReturn(weight);
     }
 
     @SuppressWarnings("unchecked")

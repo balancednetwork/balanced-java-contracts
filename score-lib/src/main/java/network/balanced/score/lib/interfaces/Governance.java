@@ -17,6 +17,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.base.Fallback;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
@@ -160,6 +161,9 @@ public interface Governance extends
 
     @External
     void castVote(BigInteger vote_index, boolean vote);
+
+    @XCall
+    void xCastVote(String from, BigInteger vote_index, boolean vote);
 
     @External
     void evaluateVote(BigInteger vote_index);

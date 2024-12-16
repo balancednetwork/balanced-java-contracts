@@ -66,6 +66,9 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     @External(readonly = true)
     BigInteger lockedEnd(Address address);
 
+    @External(readonly = true)
+    BigInteger lockedEndV2(String address);
+
     @External
     void checkpoint();
 
@@ -104,6 +107,9 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
 
     @External(readonly = true)
     BigInteger balanceOfAt(Address _owner, BigInteger block);
+
+    @External(readonly = true)
+    BigInteger xBalanceOfAt(String _owner, BigInteger block);
 
     @External(readonly = true)
     BigInteger totalSupply(@Optional BigInteger time);

@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.governance.proposal;
 
+import network.balanced.score.lib.utils.NetworkAddressDictDB;
 import score.Address;
 import score.Context;
 import score.DictDB;
@@ -39,8 +40,8 @@ public class ProposalDB {
     public final VarDB<String> name;
     public final VarDB<String> description;
     public final VarDB<Boolean> active;
-    public final DictDB<Address, BigInteger> forVotesOfUser;
-    public final DictDB<Address, BigInteger> againstVotesOfUser;
+    NetworkAddressDictDB<BigInteger> forVotesOfUser;
+    NetworkAddressDictDB<BigInteger> againstVotesOfUser;
     public final VarDB<BigInteger> totalForVotes;
     public final VarDB<BigInteger> forVotersCount;
     public final VarDB<BigInteger> againstVotersCount;
@@ -64,8 +65,8 @@ public class ProposalDB {
         name = Context.newVarDB(key + "_name", String.class);
         description = Context.newVarDB(key + "_description", String.class);
         active = Context.newVarDB(key + "_active", Boolean.class);
-        forVotesOfUser = Context.newDictDB(key + "_for_votes_of_user", BigInteger.class);
-        againstVotesOfUser = Context.newDictDB(key + "_against_votes_of_user", BigInteger.class);
+        forVotesOfUser = new NetworkAddressDictDB<>(key + "_for_votes_of_user", BigInteger.class);
+        againstVotesOfUser = new NetworkAddressDictDB<>(key + "_against_votes_of_user", BigInteger.class);
         totalForVotes = Context.newVarDB(key + "_total_for_votes", BigInteger.class);
         forVotersCount = Context.newVarDB(key + "_for_voters_count", BigInteger.class);
         againstVotersCount = Context.newVarDB(key + "_against_voters_count", BigInteger.class);

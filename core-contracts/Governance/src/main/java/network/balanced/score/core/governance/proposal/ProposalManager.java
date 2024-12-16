@@ -16,6 +16,7 @@
 
 package network.balanced.score.core.governance.proposal;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.lib.utils.ArbitraryCallManager;
 import network.balanced.score.lib.utils.Names;
@@ -30,11 +31,12 @@ import java.util.Map;
 
 import static network.balanced.score.core.governance.GovernanceImpl.*;
 import static network.balanced.score.core.governance.utils.EventLogger.VoteCast;
+import static network.balanced.score.core.governance.utils.EventLogger.VoteCastV2;
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
 
 public class ProposalManager {
 
-    public static void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
+    public static void defineVote(String address, String name, String description, BigInteger vote_start, BigInteger duration,
                                   String forumLink, String transactions) {
         Context.require(description.length() <= 500, "Description must be less than or equal to 500 characters.");
 
@@ -49,7 +51,7 @@ public class ProposalManager {
         Context.require(duration.compareTo(minVoteDuration.get()) >= 0, "Duration is below the minimum allowed " +
                 "duration of " + minVoteDuration.get());
         Context.require(voteIndex.equals(BigInteger.ZERO), "Poll name " + name + " has already been used.");
-        Context.require(checkBalnVoteCriterion(Context.getCaller(), snapshotBlock),
+        Context.require(checkBalnVoteCriterion(address, snapshotBlock),
                 "User needs at least " + balnVoteDefinitionCriterion.get().divide(BigInteger.valueOf(100)) + "% of " +
                         "total boosted baln supply to define a vote.");
 
@@ -104,7 +106,7 @@ public class ProposalManager {
         return proposals;
     }
 
-    public static void castVote(BigInteger vote_index, boolean vote) {
+    public static void castVote(NetworkAddress networkAddress, BigInteger vote_index, boolean vote) {
         ProposalDB proposal = new ProposalDB(vote_index);
         Context.require((vote_index.compareTo(BigInteger.ZERO) > 0 &&
                         _getDay().compareTo(proposal.startDay.getOrDefault(BigInteger.ZERO)) >= 0 &&
@@ -112,15 +114,14 @@ public class ProposalManager {
                         proposal.active.getOrDefault(false),
                 TAG + " :This is not an active poll.");
 
-        Address from = Context.getCaller();
         BigInteger snapshot = proposal.snapshotBlock.get();
 
-        BigInteger totalVote = myVotingWeight(from, snapshot);
+        BigInteger totalVote = myVotingWeight(networkAddress.toString(), snapshot);
 
         Context.require(!totalVote.equals(BigInteger.ZERO), TAG + "Boosted Balanced tokens needed to cast the vote.");
 
-        BigInteger userForVotes = proposal.forVotesOfUser.getOrDefault(from, BigInteger.ZERO);
-        BigInteger userAgainstVotes = proposal.againstVotesOfUser.getOrDefault(from, BigInteger.ZERO);
+        BigInteger userForVotes = proposal.forVotesOfUser.getOrDefault(networkAddress, BigInteger.ZERO);
+        BigInteger userAgainstVotes = proposal.againstVotesOfUser.getOrDefault(networkAddress, BigInteger.ZERO);
         BigInteger totalForVotes = proposal.totalForVotes.getOrDefault(BigInteger.ZERO);
         BigInteger totalAgainstVotes = proposal.totalAgainstVotes.getOrDefault(BigInteger.ZERO);
         BigInteger totalForVotersCount = proposal.forVotersCount.getOrDefault(BigInteger.ZERO);
@@ -130,8 +131,8 @@ public class ProposalManager {
         boolean isFirstTimeVote = userForVotes.signum() == 0 && userAgainstVotes.signum() == 0;
 
         if (vote) {
-            proposal.forVotesOfUser.set(from, totalVote);
-            proposal.againstVotesOfUser.set(from, BigInteger.ZERO);
+            proposal.forVotesOfUser.set(networkAddress, totalVote);
+            proposal.againstVotesOfUser.set(networkAddress, BigInteger.ZERO);
             //TODO use safemath
 
             totalFor = totalForVotes.add(totalVote).subtract(userForVotes);
@@ -144,8 +145,8 @@ public class ProposalManager {
                 proposal.forVotersCount.set(totalForVotersCount.add(BigInteger.ONE));
             }
         } else {
-            proposal.againstVotesOfUser.set(from, totalVote);
-            proposal.forVotesOfUser.set(from, BigInteger.ZERO);
+            proposal.againstVotesOfUser.set(networkAddress, totalVote);
+            proposal.forVotesOfUser.set(networkAddress, BigInteger.ZERO);
             //TODO use safemath
             totalFor = totalForVotes.subtract(userForVotes);
             totalAgainst = totalAgainstVotes.add(totalVote).subtract(userAgainstVotes);
@@ -162,7 +163,7 @@ public class ProposalManager {
         proposal.totalForVotes.set(totalFor);
         proposal.totalAgainstVotes.set(totalAgainst);
 
-        VoteCast(proposal.name.get(), vote, from, totalVote, totalFor, totalAgainst);
+        VoteCastV2(proposal.name.get(), vote, networkAddress.toString(), totalVote, totalFor, totalAgainst);
     }
 
     public static void evaluateVote(BigInteger vote_index) {
@@ -263,7 +264,7 @@ public class ProposalManager {
         );
     }
 
-    public static Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user) {
+    public static Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, NetworkAddress user) {
         ProposalDB proposal = new ProposalDB(vote_index);
         return Map.of(
                 "for", proposal.forVotesOfUser.getOrDefault(user, BigInteger.ZERO),
@@ -275,8 +276,8 @@ public class ProposalManager {
         return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "totalSupplyAt", block);
     }
 
-    public static BigInteger myVotingWeight(Address _address, BigInteger block) {
-        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "balanceOfAt", _address
+    public static BigInteger myVotingWeight(String _address, BigInteger block) {
+        return Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN), "xBalanceOfAt", _address
                 , block);
     }
 
@@ -294,7 +295,7 @@ public class ProposalManager {
         return call(BigInteger.class, ContractManager.getAddress(Names.BALN), "totalStakedBalanceOfAt", _day);
     }
 
-    private static boolean checkBalnVoteCriterion(Address address, BigInteger block) {
+    private static boolean checkBalnVoteCriterion(String address, BigInteger block) {
         BigInteger boostedBalnTotal = Context.call(BigInteger.class, ContractManager.getAddress(Names.BOOSTED_BALN),
                 "totalSupplyAt", block);
         BigInteger userBoostedBaln = myVotingWeight(address, block);

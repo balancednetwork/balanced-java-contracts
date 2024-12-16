@@ -16,6 +16,7 @@
 
 package network.balanced.score.lib.interfaces.base;
 
+import network.balanced.score.lib.annotations.XCall;
 import score.Address;
 import score.annotation.External;
 import score.annotation.Optional;
@@ -51,6 +52,9 @@ public interface RewardsVoting {
     @External
     void voteForSource(String name, BigInteger userWeight);
 
+    @XCall
+    void xVoteForSource(String from, String name, BigInteger userWeight);
+
     @External(readonly = true)
     boolean isVotable(String name);
 
@@ -62,6 +66,9 @@ public interface RewardsVoting {
 
     @External(readonly = true)
     BigInteger getLastUserVote(Address user, String source);
+
+    @External(readonly = true)
+    BigInteger getLastUserVoteV2(String user, String source);
 
     @External(readonly = true)
     BigInteger getCurrentTypeWeight(int typeId);

@@ -33,6 +33,7 @@ dependencies {
     implementation Dependencies.javaeeScorex
     implementation project(':score-lib')
     implementation Dependencies.minimalJson
+    implementation 'xyz.venture23:xcall-lib:2.1.0'
 
     testImplementation Dependencies.javaeeTokens
     testImplementation Dependencies.javaeeUnitTest
