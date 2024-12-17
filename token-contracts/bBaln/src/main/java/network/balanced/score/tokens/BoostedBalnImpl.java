@@ -326,7 +326,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
     }
 
     public void xWithdraw(String _from) {
-        xWithdraw(_from);
+        withdrawInternal(_from);
     }
 
     @External
@@ -481,9 +481,7 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         }
 
         UnsignedBigInteger delta = blockTime.subtract(uPoint.timestamp);
-        BigInteger balance = uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
-
-        return balance;
+        return uPoint.bias.subtract(uPoint.slope.multiply(delta.toBigInteger())).max(BigInteger.ZERO);
     }
 
     @External(readonly = true)
