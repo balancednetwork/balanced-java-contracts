@@ -54,7 +54,6 @@ dependencies {
     testImplementation Dependencies.mockitoCore
     testImplementation Dependencies.mockitoInline
 
-
     testImplementation project(':test-lib')
     testImplementation Dependencies.junitJupiter
     testRuntimeOnly Dependencies.junitJupiterEngine

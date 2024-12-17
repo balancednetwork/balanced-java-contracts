@@ -18,12 +18,10 @@ package network.balanced.score.core.dividends;
 
 import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.Dividends;
+import network.balanced.score.lib.interfaces.DividendsXCall;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.NetworkAddressBranchDictDB;
-import network.balanced.score.lib.utils.TokenTransfer;
-import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.*;
 import score.*;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -31,6 +29,7 @@ import score.annotation.Optional;
 import scorex.util.ArrayList;
 import scorex.util.HashMap;
 
+import java.lang.Math;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
@@ -376,7 +375,18 @@ public class DividendsImpl implements Dividends {
         return totalDividends;
     }
 
-    //todo: add xClaimDividends method
+    @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        Check.checkStatus();
+        only(getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        DividendsXCall.process(this, _from, _data);
+    }
+
+    public void xClaimDividends(String from){
+        claimDividendsInternal(from);
+    }
+
     @External
     public void claimDividends() {
         Address user = Context.getCaller();
@@ -409,7 +419,10 @@ public class DividendsImpl implements Dividends {
         DividendsTracker.setBBalnTotalSupply(getBoostedTotalSupply().add(bbalnBalance).subtract(prevBalance));
     }
 
-    //todo: add xClaim method
+    public void xClaim(String from, @Optional Integer _start, @Optional Integer _end){
+        claimInternal(from, _start, _end);
+    }
+
     @External
     public void claim(@Optional int _start, @Optional int _end) {
         Address account = Context.getCaller();
@@ -455,7 +468,10 @@ public class DividendsImpl implements Dividends {
         }
     }
 
-    //todo: add xAccumulateDividends method
+    public void xAccumulateDividends(String from, @Optional Integer _start, @Optional Integer _end){
+        accumulateDividendsInternal(from, _start, _end);
+    }
+
     @External
     public void accumulateDividends(Address user, @Optional int _start, @Optional int _end) {
         accumulateDividendsInternal(getStringNetworkAddress(user), _start, _end);

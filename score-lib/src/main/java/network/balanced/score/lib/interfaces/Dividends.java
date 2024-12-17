@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.Name;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
@@ -110,11 +111,20 @@ public interface Dividends extends Name, TokenFallback, AddressManager, Version 
     @External
     void claimDividends();
 
+    @XCall
+    void xClaimDividends(String from);
+
     @External
     void claim(@Optional int _start, @Optional int _end);
 
+    @XCall
+    void xClaim(String from, @Optional Integer _start, @Optional Integer _end);
+
     @External
     void accumulateDividends(Address user, @Optional int _start, @Optional int _end);
+
+    @XCall
+    void xAccumulateDividends(String from, @Optional Integer _start, @Optional Integer _end);
 
     @External(readonly = true)
     Map<String, BigInteger> getUserDividends(Address _account, @Optional int _start, @Optional int _end);
