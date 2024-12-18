@@ -70,7 +70,7 @@ public class BribingImpl implements Bribing {
 
     public static String NATIVE_NID;
     
-    private class SourceStatus {
+    private static class SourceStatus {
         BigInteger period;
         BigInteger bribesPerToken;
     }
@@ -272,9 +272,7 @@ public class BribingImpl implements Bribing {
         }
 
         BigInteger bias = calculateUserBias(user, source);
-        BigInteger amount = bias.multiply(status.bribesPerToken).divide(EXA);
-
-        return amount;
+        return bias.multiply(status.bribesPerToken).divide(EXA);
     }
 
     private SourceStatus updateSource(String source, Address bribeToken, boolean readOnly) {

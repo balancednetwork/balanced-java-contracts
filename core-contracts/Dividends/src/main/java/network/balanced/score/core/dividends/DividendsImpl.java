@@ -139,6 +139,7 @@ public class DividendsImpl implements Dividends {
         return dividendsEnabledToStakedBalnDay.getOrDefault(BigInteger.ZERO);
     }
 
+    //verify if we need this method for network address
     @External(readonly = true)
     public Map<String, BigInteger> getBalances() {
         Address address = Context.getAddress();
@@ -358,16 +359,26 @@ public class DividendsImpl implements Dividends {
         return accruedDividends;
     }
 
-
     @External(readonly = true)
     public Map<String, BigInteger> getUnclaimedDividends(Address user) {
+        String networkAddress = getStringNetworkAddress(user);
+        return getUnclaimedDividendsInternal(networkAddress);
+    }
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getUnclaimedDividendsV2(String user) {
+        String networkAddress =  NetworkAddress.valueOf(user, NATIVE_NID).toString();
+        return getUnclaimedDividendsInternal(networkAddress);
+    }
+
+    private Map<String, BigInteger> getUnclaimedDividendsInternal(String user) {
         Map<String, BigInteger> totalDividends = new HashMap<>();
 
         int size = acceptedTokens.size();
         for (int i = 0; i < size; i++) {
             Address token = acceptedTokens.get(i);
-            BigInteger calcAccruedDividends = calculateAccruedDividends(token, new NetworkAddress(NATIVE_NID, user).toString(), true);
-            BigInteger prevAccruedDividends = accruedDividends.getOrDefault(new NetworkAddress(NATIVE_NID, user), token, BigInteger.ZERO);
+            BigInteger calcAccruedDividends = calculateAccruedDividends(token, user, true);
+            BigInteger prevAccruedDividends = accruedDividends.getOrDefault(NetworkAddress.valueOf(user), token, BigInteger.ZERO);
             BigInteger totalDivs = calcAccruedDividends.add(prevAccruedDividends);
             totalDividends.put(token.toString(), totalDivs);
         }
@@ -518,7 +529,7 @@ public class DividendsImpl implements Dividends {
         checkStatus();
         Address token = Context.getCaller();
         Context.require(arrayDbContains(acceptedTokens, token), "Dividends contract does not accept " + token);
-        String daoFundNetworkAddress = new NetworkAddress(NATIVE_NID, getDaofund()).toString();
+        String daoFundNetworkAddress = getStringNetworkAddress(getDaofund());
         if (getBoostedTotalSupply().equals(BigInteger.ZERO)) {
             sendToken( daoFundNetworkAddress, _value, token, "Daofund dividends");
             return;
@@ -532,28 +543,19 @@ public class DividendsImpl implements Dividends {
         sendToken( daoFundNetworkAddress, dividendsToDaofund, token, "Daofund dividends");
     }
 
-//    @External
-//    public void updateBalnStake(Address user, BigInteger prevStakedBalance, BigInteger currentTotalSupply) {
-//        checkStatus();
-//        only(getBaln());
-//        int size = acceptedTokens.size();
-//        DictDB<Address, BigInteger> userAccruedDividends = accruedDividends.at(user);
-//        for (int i = 0; i < size; i++) {
-//            Address token = acceptedTokens.get(i);
-//            if (DividendsTracker.balnRewardsClaimed(user, token)) {
-//                return;
-//            }
-//
-//            BigInteger accruedDividends = DividendsTracker.updateUserData(token, user, prevStakedBalance, false);
-//            BigInteger prevAccruedDividends = userAccruedDividends.getOrDefault(token, BigInteger.ZERO);
-//            userAccruedDividends.set(token, prevAccruedDividends.add(accruedDividends));
-//        }
-//
-//        DividendsTracker.setTotalSupply(currentTotalSupply);
-//    }
+    @External(readonly = true)
+    public Map<String, BigInteger> getUserDividendsV2(String _account, @Optional int _start, @Optional int _end) {
+        String user = NetworkAddress.valueOf(_account, NATIVE_NID).toString();
+        return getUserDividendsInternal(user, _start, _end);
+    }
 
     @External(readonly = true)
     public Map<String, BigInteger> getUserDividends(Address _account, @Optional int _start, @Optional int _end) {
+        String user = getStringNetworkAddress(_account);
+        return getUserDividendsInternal(user, _start, _end);
+    }
+    
+    private Map<String, BigInteger> getUserDividendsInternal(String _account, int _start, int _end){
         int[] value = checkStartEnd(_start, _end);
         int start = value[0];
         int end = value[1];
@@ -570,7 +572,7 @@ public class DividendsImpl implements Dividends {
         Map<String, BigInteger> totalDividends = new HashMap<>();
 
         for (int i = start; i < end; i++) {
-            Map<String, BigInteger> dividends = getDividendsForDay(new NetworkAddress(NATIVE_NID, _account).toString(), BigInteger.valueOf(i), baln, dex,
+            Map<String, BigInteger> dividends = getDividendsForDay(_account, BigInteger.valueOf(i), baln, dex,
                     dividendsSwitchingDay, acceptedTokensList);
             totalDividends = addDividends(totalDividends, dividends, acceptedTokensList);
         }
@@ -750,7 +752,7 @@ public class DividendsImpl implements Dividends {
 
     private Map<String, BigInteger> getDividendsForDaoFund(BigInteger day, List<Address> acceptedTokensList,
                                                            Address dao) {
-        boolean claim = isClaimed(new NetworkAddress(NATIVE_NID, dao).toString(), day);
+        boolean claim = isClaimed(getStringNetworkAddress(dao), day);
         if (claim) {
             return Map.of();
         }

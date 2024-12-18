@@ -232,6 +232,12 @@ public class GovernanceImpl implements Governance {
     }
 
     @External(readonly = true)
+    public Map<String, BigInteger> getVotesOfUserV2(BigInteger vote_index, String user) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, getNativeNid());
+        return ProposalManager.getVotesOfUser(vote_index, networkAddress);
+    }
+
+    @External(readonly = true)
     public BigInteger totalBoostedBaln(BigInteger block) {
         return ProposalManager.totalBoostedBaln(block);
     }
