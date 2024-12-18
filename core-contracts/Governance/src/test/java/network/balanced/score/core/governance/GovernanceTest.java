@@ -19,6 +19,7 @@ package network.balanced.score.core.governance;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.structs.DistributionPercentage;
 import network.balanced.score.lib.structs.PrepDelegations;
 import network.balanced.score.lib.utils.Names;
@@ -65,8 +66,8 @@ public class GovernanceTest extends GovernanceTestBase {
         Account user = sm.createAccount();
         BigInteger block = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger expectedWeight = BigInteger.ONE;
-
-        when(bBaln.mock.balanceOfAt(user.getAddress(), block)).thenReturn(expectedWeight);
+        String networkAddress = NetworkAddress.valueOf(user.getAddress().toString(), NATIVE_NID).toString();
+        when(bBaln.mock.xBalanceOfAt(networkAddress, block)).thenReturn(expectedWeight);
         // Act
         BigInteger votingWeight = (BigInteger) governance.call("myVotingWeight", user.getAddress(), block);
 

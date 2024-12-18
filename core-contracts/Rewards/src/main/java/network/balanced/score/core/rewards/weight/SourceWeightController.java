@@ -16,10 +16,14 @@
 
 package network.balanced.score.core.rewards.weight;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.rewards.RewardsImpl;
 import network.balanced.score.lib.structs.Point;
 import network.balanced.score.lib.structs.VotedSlope;
+import network.balanced.score.lib.utils.BranchedNetworkAddressArrayDB;
 import network.balanced.score.lib.utils.EnumerableSetDB;
+import network.balanced.score.lib.utils.NetworkAddressBranchDictDB;
+import network.balanced.score.lib.utils.NetworkAddressDictDB;
 import score.*;
 
 import java.math.BigInteger;
@@ -47,15 +51,22 @@ public class SourceWeightController {
     private static final DictDB<String, Integer> sourceTypes = Context.newDictDB("sourceTypes", Integer.class);
     private static final DictDB<String, Boolean> isVotable = Context.newDictDB("votable", Boolean.class);
 
-    private static final BranchDB<Address, DictDB<String, VotedSlope>> voteUserSlopes = Context.newBranchDB(
-            "voteUserSlopes", VotedSlope.class);
+//    private static final BranchDB<Address, DictDB<String, VotedSlope>> voteUserSlopes = Context.newBranchDB(
+//            "voteUserSlopes", VotedSlope.class);
+    private static final NetworkAddressBranchDictDB<String, VotedSlope> voteUserSlopes = new NetworkAddressBranchDictDB<>(
+        "voteUserSlopes", VotedSlope.class);
 
-    private static final DictDB<Address, BigInteger> voteUserPower = Context.newDictDB("voteUserPower",
+//  private static final DictDB<Address, BigInteger> voteUserPower = Context.newDictDB("voteUserPower",
+//            BigInteger.class);
+    private static final NetworkAddressDictDB<BigInteger> voteUserPower = new NetworkAddressDictDB<>("voteUserPower",
             BigInteger.class);
 
-    private static final BranchDB<Address, DictDB<String, BigInteger>> lastUserVote = Context.newBranchDB(
+//    private static final BranchDB<Address, DictDB<String, BigInteger>> lastUserVote = Context.newBranchDB(
+//            "lastUserVote", BigInteger.class);
+
+    private static final NetworkAddressBranchDictDB<String, BigInteger> lastUserVote = new NetworkAddressBranchDictDB<>(
             "lastUserVote", BigInteger.class);
-    private static final BranchDB<Address, ArrayDB<String>> activeUserWeights = Context.newBranchDB(
+    private static final BranchedNetworkAddressArrayDB<String> activeUserWeights = new BranchedNetworkAddressArrayDB<>(
             "activeUserWeights", String.class);
 
     // Past and scheduled points for source weight, sum of weights per type, total weight
@@ -394,14 +405,14 @@ public class SourceWeightController {
      * @param sourceName Source which `user` votes for
      * @param userWeight Weight for a source in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
      */
-    public static void voteForSourceWeights(String sourceName, BigInteger userWeight) {
+    public static void voteForSourceWeights(String user, String sourceName, BigInteger userWeight) {
+        NetworkAddress userNetworkAddress = NetworkAddress.valueOf(user);
         Context.require(isVotable.getOrDefault(sourceName, true) || userWeight.equals(BigInteger.ZERO), sourceName +
                 " is not a votable source, you can only remove weight");
 
         Address bBalnAddress = getBoostedBaln();
-        Address user = Context.getCaller();
-        BigInteger slope = Context.call(BigInteger.class, bBalnAddress, "getLastUserSlope", user);
-        BigInteger lockEnd = Context.call(BigInteger.class, bBalnAddress, "lockedEnd", user);
+        BigInteger slope = Context.call(BigInteger.class, bBalnAddress, "getLastUserSlopeV2", user);
+        BigInteger lockEnd = Context.call(BigInteger.class, bBalnAddress, "lockedEndV2", user);
 
         BigInteger timestamp = BigInteger.valueOf(Context.getBlockTimestamp());
         BigInteger nextTime = getNextWeekTimestamp();
@@ -410,13 +421,13 @@ public class SourceWeightController {
         Context.require((userWeight.compareTo(BigInteger.ZERO) >= 0) && (userWeight.compareTo(VOTE_POINTS) <= 0),
                 "Weight has to be between 0 and 10000");
         BigInteger nextUserVote =
-                lastUserVote.at(user).getOrDefault(sourceName, BigInteger.ZERO).add(WEIGHT_VOTE_DELAY);
+                lastUserVote.getOrDefault(userNetworkAddress, sourceName, BigInteger.ZERO).add(WEIGHT_VOTE_DELAY);
                 Context.require(timestamp.compareTo(nextUserVote) >= 0, "Cannot vote so often");
 
         int sourceType = sourceTypes.get(sourceName) - 1;
         Context.require(sourceType >= 0, "Source not added");
         // Prepare slopes and biases in memory
-        VotedSlope oldSlope = voteUserSlopes.at(user).getOrDefault(sourceName, new VotedSlope());
+        VotedSlope oldSlope = voteUserSlopes.getOrDefault(userNetworkAddress, sourceName, new VotedSlope());
         BigInteger oldDt = BigInteger.ZERO;
         if (oldSlope.end.compareTo(nextTime) > 0) {
             oldDt = oldSlope.end.subtract(nextTime);
@@ -432,11 +443,11 @@ public class SourceWeightController {
         BigInteger newBias = newSlope.slope.multiply(newDt);
 
         // Check and update powers (weights) used
-        BigInteger powerUsed = voteUserPower.getOrDefault(user, BigInteger.ZERO);
+        BigInteger powerUsed = voteUserPower.getOrDefault(userNetworkAddress, BigInteger.ZERO);
         powerUsed = powerUsed.add(newSlope.power).subtract(oldSlope.power);
         Context.require((powerUsed.compareTo(BigInteger.ZERO) >= 0) && (powerUsed.compareTo(VOTE_POINTS) <= 0), "Used" +
                 " too much power");
-        voteUserPower.set(user, powerUsed);
+        voteUserPower.set(userNetworkAddress, powerUsed);
 
         // Remove old and schedule new slope changes
         // Remove slope changes for old slopes
@@ -478,19 +489,19 @@ public class SourceWeightController {
 
         getTotal();
 
-        voteUserSlopes.at(user).set(sourceName, newSlope);
+        voteUserSlopes.set( userNetworkAddress, sourceName, newSlope);
 
         // Record last action time
         if (userWeight.equals(BigInteger.ZERO)) {
-            removeFromArraydb(sourceName, activeUserWeights.at(user));
+            removeFromArraydb(sourceName, activeUserWeights.at(userNetworkAddress, false));
         } else {
-            if (!arrayDbContains(activeUserWeights.at(user), sourceName)) {
-                activeUserWeights.at(user).add(sourceName);
+            if (!arrayDbContains(activeUserWeights.at(userNetworkAddress, false), sourceName)) {
+                activeUserWeights.at(userNetworkAddress, false).add(sourceName);
             }
         }
 
-        lastUserVote.at(user).set(sourceName, timestamp);
-        rewards.VoteForSource(sourceName, user, newWeight, nextTime);
+        lastUserVote.set(userNetworkAddress, sourceName, timestamp);
+        rewards.VoteForSourceV2(sourceName, user, newWeight, nextTime);
     }
 
     public static void setVotable(String name, boolean votable) {
@@ -546,12 +557,12 @@ public class SourceWeightController {
         return pointsSum.at(typeId).get(timeSum.get(typeId));
     }
 
-    public static VotedSlope getUserSlope(Address user, String source) {
-        return voteUserSlopes.at(user).getOrDefault(source, new VotedSlope());
+    public static VotedSlope getUserSlope(NetworkAddress user, String source) {
+        return voteUserSlopes.getOrDefault(user, source, new VotedSlope());
     }
 
-    public static BigInteger getLastUserVote(Address user, String source) {
-        return lastUserVote.at(user).getOrDefault(source, BigInteger.ZERO);
+    public static BigInteger getLastUserVote(NetworkAddress user, String source) {
+        return lastUserVote.getOrDefault(user, source, BigInteger.ZERO);
     }
 
 

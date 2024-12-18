@@ -29,4 +29,12 @@ public class EventLogger {
                 new Object[]{voter, stake, total_for, total_against}
         );
     }
+
+    public static void VoteCastV2(String vote_name, boolean vote, String voter, BigInteger stake, BigInteger total_for,
+                                BigInteger total_against) {
+        Context.logEvent(
+                new Object[]{"VoteCast(str,bool,String,int,int,int)", vote_name, vote},
+                new Object[]{voter, stake, total_for, total_against}
+        );
+    }
 }

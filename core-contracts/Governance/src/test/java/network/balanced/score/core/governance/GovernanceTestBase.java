@@ -21,6 +21,7 @@ import com.eclipsesource.json.JsonObject;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.test.UnitTest;
 import network.balanced.score.lib.test.mock.MockContract;
@@ -45,6 +46,7 @@ public class GovernanceTestBase extends UnitTest {
 
     protected static final Account oracle = Account.newScoreAccount(scoreCount);
 
+    protected MockContract<XCall> xCall;
     protected MockContract<Loans> loans;
     protected MockContract<Dex> dex;
     protected MockContract<Staking> staking;
@@ -65,6 +67,7 @@ public class GovernanceTestBase extends UnitTest {
     protected MockContract<BalancedOracle> balancedOracle;
 
     protected Score governance;
+    public final String NATIVE_NID = "0x1.ICON";
 
     protected JsonObject createJsonDistribution(String name, BigInteger dist) {
         return new JsonObject()
@@ -141,6 +144,7 @@ public class GovernanceTestBase extends UnitTest {
         governance.invoke(owner, "addExternalContract", Names.STABILITY, stability.getAddress());
         governance.invoke(owner, "addExternalContract", Names.BALANCEDORACLE, balancedOracle.getAddress());
         governance.invoke(owner, "addExternalContract", Names.BOOSTED_BALN, bBaln.getAddress());
+        governance.invoke(owner, "addExternalContract", Names.XCALL, xCall.getAddress());
     }
 
     protected BigInteger executeVoteWithActions(String actions) {
@@ -153,7 +157,7 @@ public class GovernanceTestBase extends UnitTest {
         String forumLink = "https://gov.balanced.network/";
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(20).multiply(ICX));
-        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(owner.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
 
         governance.invoke(owner, "defineVote", name, description, voteStart, BigInteger.TWO, forumLink, actions);
         BigInteger id = (BigInteger) governance.call("getVoteIndex", name);
@@ -181,8 +185,8 @@ public class GovernanceTestBase extends UnitTest {
         Map<String, Object> vote = getVote(id);
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(totalSupply);
-        when(bBaln.mock.balanceOfAt(eq(forVoter.getAddress()), any(BigInteger.class))).thenReturn(forVotes);
-        when(bBaln.mock.balanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVotes);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(forVoter.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(forVotes);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(againstVoter.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(againstVotes);
 
         goToDay((BigInteger) vote.get("start day"));
 
@@ -207,7 +211,7 @@ public class GovernanceTestBase extends UnitTest {
         String forumLink = "https://gov.balanced.network/";
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(ICX));
-        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ONE.multiply(ICX));
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(owner.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.ONE.multiply(ICX));
 
         governance.invoke(owner, "defineVote", name, description, voteStart, BigInteger.TWO, forumLink, actions);
 
@@ -229,6 +233,7 @@ public class GovernanceTestBase extends UnitTest {
     }
 
     protected void setup() throws Exception {
+        xCall = new MockContract<>(XCallScoreInterface.class, sm, owner);
         loans = new MockContract<>(LoansScoreInterface.class, sm, owner);
         dex = new MockContract<>(DexScoreInterface.class, sm, owner);
         staking = new MockContract<>(StakingScoreInterface.class, sm, owner);
@@ -248,6 +253,8 @@ public class GovernanceTestBase extends UnitTest {
         stability = new MockContract<>(StabilityScoreInterface.class, sm, owner);
         bBaln = new MockContract<>(BoostedBalnScoreInterface.class, sm, owner);
         balancedOracle = new MockContract<>(BalancedOracleScoreInterface.class, sm, owner);
+
+        when(xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         governance = sm.deploy(owner, GovernanceImpl.class);
 
         setupAddresses();

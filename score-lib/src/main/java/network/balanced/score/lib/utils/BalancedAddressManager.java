@@ -59,15 +59,6 @@ public class BalancedAddressManager {
         return address;
     }
 
-    public static String getNativeNid() {
-        String nid = nativeNid.get();
-        if (nid == null) {
-            nid = Context.call(String.class, getXCall(), "getNetworkId");
-        }
-
-        return nid;
-    }
-
     public static Address getBaln() {
         return getAddress(Names.BALN);
     }

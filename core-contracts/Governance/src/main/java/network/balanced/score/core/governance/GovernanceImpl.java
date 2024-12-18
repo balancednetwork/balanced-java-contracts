@@ -16,16 +16,17 @@
 
 package network.balanced.score.core.governance;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.governance.proposal.ProposalDB;
 import network.balanced.score.core.governance.proposal.ProposalManager;
 import network.balanced.score.core.governance.utils.ContractManager;
 import network.balanced.score.core.governance.utils.EmergencyManager;
 import network.balanced.score.core.governance.utils.SetupManager;
 import network.balanced.score.lib.interfaces.Governance;
+import network.balanced.score.lib.interfaces.GovernanceXCall;
+import network.balanced.score.lib.interfaces.RewardsXCall;
 import network.balanced.score.lib.structs.PrepDelegations;
-import network.balanced.score.lib.utils.Names;
-import network.balanced.score.lib.utils.Versions;
-import network.balanced.score.lib.utils.ArbitraryCallManager;
+import network.balanced.score.lib.utils.*;
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -39,7 +40,9 @@ import java.util.List;
 import java.util.Map;
 
 import static network.balanced.score.core.governance.utils.GovernanceConstants.*;
+import static network.balanced.score.lib.utils.BalancedAddressManager.getXCall;
 import static network.balanced.score.lib.utils.Check.*;
+import static network.balanced.score.lib.utils.Check.checkStatus;
 import static network.balanced.score.lib.utils.Constants.MICRO_SECONDS_IN_A_DAY;
 
 public class GovernanceImpl implements Governance {
@@ -54,6 +57,8 @@ public class GovernanceImpl implements Governance {
     public static final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public static final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+
+    public static String NATIVE_NID;
 
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
@@ -168,7 +173,8 @@ public class GovernanceImpl implements Governance {
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
             String forumLink, @Optional String transactions) {
         transactions = optionalDefault(transactions, "[]");
-        ProposalManager.defineVote(name, description, vote_start, duration, forumLink, transactions);
+        String caller = new NetworkAddress(getNativeNid(), Context.getCaller()).toString();
+        ProposalManager.defineVote(caller, name, description, vote_start, duration, forumLink, transactions);
     }
 
     @External
@@ -196,7 +202,12 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void castVote(BigInteger vote_index, boolean vote) {
-        ProposalManager.castVote(vote_index, vote);
+        NetworkAddress networkAddress = new NetworkAddress(getNativeNid(), Context.getCaller());
+        ProposalManager.castVote(networkAddress, vote_index, vote);
+    }
+
+    public void xCastVote(String from, BigInteger vote_index, boolean vote) {
+        ProposalManager.castVote(NetworkAddress.valueOf(from), vote_index, vote);
     }
 
     @External
@@ -216,7 +227,14 @@ public class GovernanceImpl implements Governance {
 
     @External(readonly = true)
     public Map<String, BigInteger> getVotesOfUser(BigInteger vote_index, Address user) {
-        return ProposalManager.getVotesOfUser(vote_index, user);
+        NetworkAddress networkAddress = new NetworkAddress(getNativeNid(), user);
+        return ProposalManager.getVotesOfUser(vote_index, networkAddress);
+    }
+
+    @External(readonly = true)
+    public Map<String, BigInteger> getVotesOfUserV2(BigInteger vote_index, String user) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(user, getNativeNid());
+        return ProposalManager.getVotesOfUser(vote_index, networkAddress);
     }
 
     @External(readonly = true)
@@ -226,7 +244,14 @@ public class GovernanceImpl implements Governance {
 
     @External(readonly = true)
     public BigInteger myVotingWeight(Address _address, BigInteger block) {
-        return ProposalManager.myVotingWeight(_address, block);
+        NetworkAddress networkAddress = new NetworkAddress(getNativeNid(), _address);
+        return ProposalManager.myVotingWeight(networkAddress.toString(), block);
+    }
+
+    @External(readonly = true)
+    public BigInteger myVotingWeightV2(String _address, BigInteger block) {
+        NetworkAddress networkAddress = NetworkAddress.valueOf(_address, getNativeNid());
+        return ProposalManager.myVotingWeight(networkAddress.toString(), block);
     }
 
     @External
@@ -449,6 +474,14 @@ public class GovernanceImpl implements Governance {
         Context.call(ContractManager.getAddress(Names.WORKERTOKEN), "adminTransfer", _from, _to, _value, _data);
     }
 
+    @External
+    public void handleCallMessage(String _from, byte[] _data, @Optional String[] _protocols) {
+        Check.checkStatus();
+        only(BalancedAddressManager.getXCall());
+        XCallUtils.verifyXCallProtocols(_from, _protocols);
+        GovernanceXCall.process(this, _from, _data);
+    }
+
     @EventLog(indexed = 1)
     public void ContractUpdated(String name, String error) {
 
@@ -522,5 +555,13 @@ public class GovernanceImpl implements Governance {
         byte[] rawAddress = new byte[Address.LENGTH];
         rawAddress[0] = 1;
         return new Address(rawAddress);
+    }
+
+    public static String getNativeNid() {
+        if (NATIVE_NID == null) {
+            NATIVE_NID = Context.call(String.class, ContractManager.getAddress(Names.XCALL), "getNetworkId");
+        }
+
+        return NATIVE_NID;
     }
 }

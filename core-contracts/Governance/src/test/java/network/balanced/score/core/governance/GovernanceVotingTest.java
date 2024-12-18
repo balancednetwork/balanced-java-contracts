@@ -18,6 +18,7 @@ package network.balanced.score.core.governance;
 
 import com.eclipsesource.json.JsonArray;
 import com.iconloop.score.test.Account;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.governance.proposal.ProposalStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,8 +55,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String actions = "[]";
         String expectedErrorMessage;
 
-        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
-        when(bBaln.mock.balanceOfAt(eq(accountWithLowBalance.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(owner.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(accountWithLowBalance.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
         // Act & Assert
@@ -126,7 +127,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String actions = "[]";
         String expectedErrorMessage;
 
-        when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(proposer.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
         governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
@@ -180,7 +181,7 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         BigInteger voteDuration = BigInteger.TWO;
         String actions = "[]";
 
-        when(bBaln.mock.balanceOfAt(eq(proposer.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(proposer.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.TEN.multiply(EXA));
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(BigInteger.valueOf(6).multiply(EXA));
 
         governance.invoke(proposer, "defineVote", name, description, voteStart, voteDuration, forumLink, actions);
@@ -205,8 +206,8 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         String expectedErrorMessage;
         Map<String, Object> vote = getVote(id);
 
-        when(bBaln.mock.balanceOfAt(eq(owner.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.valueOf(8));
-        when(bBaln.mock.balanceOfAt(eq(zeroBalanceAccount.getAddress()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(owner.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.valueOf(8));
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(zeroBalanceAccount.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(BigInteger.ZERO);
 
         // Act & Assert
         expectedErrorMessage = TAG + " :This is not an active poll.";
@@ -264,11 +265,11 @@ public class GovernanceVotingTest extends GovernanceTestBase {
         Map<String, Object> vote = getVote(id);
 
         when(bBaln.mock.totalSupplyAt(any(BigInteger.class))).thenReturn(totalSupply);
-        when(bBaln.mock.balanceOfAt(eq(forVoter1.getAddress()), any(BigInteger.class))).thenReturn(forVoter1Balance);
-        when(bBaln.mock.balanceOfAt(eq(forVoter2.getAddress()), any(BigInteger.class))).thenReturn(forVoter2Balance);
-        when(bBaln.mock.balanceOfAt(eq(againstVoter.getAddress()), any(BigInteger.class))).thenReturn(againstVoterBalance);
-        when(bBaln.mock.balanceOfAt(eq(swayedAgainstVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedAgainstVoterBalance);
-        when(bBaln.mock.balanceOfAt(eq(swayedForVoter.getAddress()), any(BigInteger.class))).thenReturn(swayedForVoterBalance);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(forVoter1.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(forVoter1Balance);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(forVoter2.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(forVoter2Balance);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(againstVoter.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(againstVoterBalance);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(swayedAgainstVoter.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(swayedAgainstVoterBalance);
+        when(bBaln.mock.xBalanceOfAt(eq(NetworkAddress.valueOf(swayedForVoter.getAddress().toString(), NATIVE_NID).toString()), any(BigInteger.class))).thenReturn(swayedForVoterBalance);
 
         goToDay((BigInteger) vote.get("start day"));
 

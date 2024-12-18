@@ -82,6 +82,9 @@ public interface Rewards extends
     @External
     void boost(String[] sources);
 
+    @XCall
+    void xBoost(String from, String[] sources);
+
     @External
     void claimRewards(@Optional String[] sources);
 
@@ -113,13 +116,13 @@ public interface Rewards extends
     BigInteger getTimeOffset();
 
     @External
-    void onKick(Address user);
+    void onKick(String user);
 
     @External
     void kick(Address user, String[] sources);
 
     @External
-    void onBalanceUpdate(Address user, BigInteger balance);
+    void onBalanceUpdate(String user, BigInteger balance);
 
     @External
     void setBoostWeight(BigInteger weight);

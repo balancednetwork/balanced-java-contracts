@@ -17,6 +17,7 @@
 package network.balanced.score.core.dividends;
 
 import com.iconloop.score.test.Account;
+import foundation.icon.xcall.NetworkAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import score.Address;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.*;
 class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
     private final BigInteger batchSize = BigInteger.TWO;
+
 
     @BeforeEach
     void setup() throws Exception {
@@ -50,6 +52,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         // Arrange
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
+        String staker1String = NetworkAddress.valueOf(staker1.getAddress().toString(), NATIVE_NID).toString();
+        String staker2String = NetworkAddress.valueOf(staker2.getAddress().toString(), NATIVE_NID).toString();
 
         when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
         when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
@@ -64,8 +68,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1Balance);
 
         // Act
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1Balance);
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2Balance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1String, staker1Balance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2String, staker2Balance);
 
         BigInteger expectedFees = BigInteger.TEN.pow(20);
         BigInteger expectedStakingFees = expectedFees.multiply(stakerPercentage).divide(ICX);
@@ -109,10 +113,12 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
 
         mockBBalnBalanceOf(staker2.getAddress(), staker2BBalnBalance);
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
+        String staker1String = NetworkAddress.valueOf(staker1.getAddress().toString(), NATIVE_NID).toString();
+        String staker2String = NetworkAddress.valueOf(staker2.getAddress().toString(), NATIVE_NID).toString();
 
         // Act
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1String, staker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2String, staker2BBalnBalance);
 
         BigInteger loanAmount = BigInteger.TEN.pow(20);
         BigInteger dividendsForBBalnUser = loanAmount.multiply(stakerPercentage).divide(ICX);
@@ -122,12 +128,12 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger user2AccruedDividends = dividendsForBBalnUser.multiply(staker2BBalnBalance).divide(totalSupply);
 
         // Assert
-        mockStake(staker1.getAddress(), staker1BBalnBalance);
-        mockStake(staker2.getAddress(), staker2BBalnBalance);
+        mockStake(staker1.getAddress(), BigInteger.ZERO);
+        mockStake(staker2.getAddress(), BigInteger.ZERO);
         mockBBalnBalanceOf(staker2.getAddress(), staker2BBalnBalance);
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
-        dividendScore.invoke(bBaln.account, "onKick", staker1.getAddress());
+        dividendScore.invoke(bBaln.account, "onKick", staker1String);
 
         dividendScore.invoke(staker1, "claimDividends");
         dividendScore.invoke(staker2, "claimDividends");
@@ -147,6 +153,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         // Arrange
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
+        String staker1String = NetworkAddress.valueOf(staker1.getAddress().toString(), NATIVE_NID).toString();
+        String staker2String = NetworkAddress.valueOf(staker2.getAddress().toString(), NATIVE_NID).toString();
 
         when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
         when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
@@ -161,8 +169,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
         // Act
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1String, staker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2String, staker2BBalnBalance);
 
         BigInteger loanAmount = BigInteger.TEN.pow(20);
 
@@ -184,6 +192,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         // Arrange
         Account staker1 = sm.createAccount();
         Account staker2 = sm.createAccount();
+        String staker1String = NetworkAddress.valueOf(staker1.getAddress().toString(), NATIVE_NID).toString();
+        String staker2String = NetworkAddress.valueOf(staker2.getAddress().toString(), NATIVE_NID).toString();
 
         when(baln.mock.stakedBalanceOf(staker1.getAddress())).thenReturn(BigInteger.ZERO);
         when(baln.mock.stakedBalanceOf(staker2.getAddress())).thenReturn(BigInteger.ZERO);
@@ -197,8 +207,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         mockBBalnBalanceOf(staker1.getAddress(), staker1BBalnBalance);
 
         // Act
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), staker1BBalnBalance);
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), staker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1String, staker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2String, staker2BBalnBalance);
 
         BigInteger loanAmount = BigInteger.TEN.pow(20);
         addBnusdFeesAndMockDaoFund(loanAmount);
@@ -224,8 +234,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
         BigInteger newStaker1BBalnBalance = BigInteger.valueOf(350).multiply(ICX);
         BigInteger newStaker2BBalnBalance = BigInteger.valueOf(100).multiply(ICX);
 
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1.getAddress(), newStaker1BBalnBalance);
-        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2.getAddress(), newStaker2BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker1String, newStaker1BBalnBalance);
+        dividendScore.invoke(bBaln.account, "onBalanceUpdate", staker2String, newStaker2BBalnBalance);
         addBnusdFees(loanAmount);
 
         // new total supply for bbaln
@@ -258,7 +268,8 @@ class DividendsImplTestContinuousDividends extends DividendsImplTestBase {
     }
 
     private void mockBBalnBalanceOf(Address user, BigInteger stake) {
-        when(bBaln.mock.balanceOf(eq(user), any(BigInteger.class))).thenReturn(stake);
+        String networkAddress = NetworkAddress.valueOf(user.toString(), NATIVE_NID).toString();
+        when(bBaln.mock.xBalanceOf(eq(networkAddress), any(BigInteger.class))).thenReturn(stake);
     }
 
 }

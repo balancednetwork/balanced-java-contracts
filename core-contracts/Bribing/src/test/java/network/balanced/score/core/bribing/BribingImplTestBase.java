@@ -24,7 +24,12 @@ import network.balanced.score.lib.interfaces.*;
 import network.balanced.score.lib.interfaces.tokens.*;
 import network.balanced.score.lib.structs.BalancedAddresses;
 import network.balanced.score.lib.test.UnitTest;
+import network.balanced.score.lib.test.integration.Balanced;
+import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.test.mock.MockContract;
+import network.balanced.score.lib.utils.BalancedAddressManager;
+import network.balanced.score.lib.utils.Names;
+import score.Context;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -51,13 +56,22 @@ class BribingImplTestBase extends UnitTest {
 
     protected MockContract<Rewards> rewards;
     protected MockContract<IRC2> bribeToken;
+    protected MockContract<XCall> xCall;
+    protected MockContract<Governance> governance;
+    private MockBalanced balanced;
 
     protected Score bribing;
     protected BribingImpl bribingSpy;
 
+    public final String NATIVE_NID = "0x1.ICON";
+
     protected void setupBase() throws Exception {
-        rewards = new MockContract<>(RewardsScoreInterface.class, sm, owner);
+        balanced = new MockBalanced(sm, owner);
+        rewards = balanced.rewards;
+        governance = balanced.governance;
         bribeToken = new MockContract<>(IRC2ScoreInterface.class, sm, owner);
+        xCall = balanced.xCall;
+        when(xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         bribing = sm.deploy(owner, BribingImpl.class, rewards.getAddress());
 
         bribingSpy = (BribingImpl) spy(bribing.getInstance());

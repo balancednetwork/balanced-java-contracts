@@ -18,6 +18,7 @@ package network.balanced.score.lib.interfaces;
 
 import foundation.icon.score.client.ScoreClient;
 import foundation.icon.score.client.ScoreInterface;
+import network.balanced.score.lib.annotations.XCall;
 import network.balanced.score.lib.interfaces.addresses.AddressManager;
 import network.balanced.score.lib.interfaces.base.TokenFallback;
 import network.balanced.score.lib.interfaces.base.Version;
@@ -48,7 +49,7 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     BigInteger getTotalLocked();
 
     @External(readonly = true)
-    List<Address> getUsers(int start, int end);
+    List<String> getUsers(int start, int end);
 
     @External(readonly = true)
     boolean hasLocked(Address _owner);
@@ -57,16 +58,25 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     BigInteger getLastUserSlope(Address address);
 
     @External(readonly = true)
+    BigInteger getLastUserSlopeV2(String address);
+
+    @External(readonly = true)
     BigInteger userPointHistoryTimestamp(Address address, BigInteger index);
 
     @External(readonly = true)
     BigInteger lockedEnd(Address address);
+
+    @External(readonly = true)
+    BigInteger lockedEndV2(String address);
 
     @External
     void checkpoint();
 
     @External
     void increaseUnlockTime(BigInteger unlockTime);
+
+    @XCall
+    void xIncreaseUnlockTime(String from, BigInteger unlockTime);
 
     @External
     void kick(Address user);
@@ -77,11 +87,29 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
     @External
     void withdrawEarly();
 
+    @XCall
+    void xKick(String from);
+
+    @XCall
+    void xWithdrawEarly(String from);
+
+    @XCall
+    void xWithdraw(String from);
+
+    @XCall
+    void checkpoint(String from);
+
     @External(readonly = true)
     BigInteger balanceOf(Address _owner, @Optional BigInteger timestamp);
 
     @External(readonly = true)
+    BigInteger xBalanceOf(String _owner, @Optional BigInteger timestamp);
+
+    @External(readonly = true)
     BigInteger balanceOfAt(Address _owner, BigInteger block);
+
+    @External(readonly = true)
+    BigInteger xBalanceOfAt(String _owner, BigInteger block);
 
     @External(readonly = true)
     BigInteger totalSupply(@Optional BigInteger time);
@@ -100,4 +128,7 @@ public interface BoostedBaln extends AddressManager, TokenFallback, Version {
 
     @External(readonly = true)
     BigInteger userPointEpoch(Address address);
+
+    @External(readonly = true)
+    BigInteger xUserPointEpoch(String address);
 }

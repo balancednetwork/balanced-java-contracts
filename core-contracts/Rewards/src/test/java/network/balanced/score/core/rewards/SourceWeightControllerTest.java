@@ -20,6 +20,7 @@ package network.balanced.score.core.rewards;
 import com.iconloop.score.test.Account;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.rewards.weight.SourceWeightController;
 import network.balanced.score.lib.interfaces.BoostedBaln;
 import network.balanced.score.lib.test.UnitTest;
@@ -60,6 +61,8 @@ public class SourceWeightControllerTest extends UnitTest {
 
     BigInteger unlockTime;
 
+    public final String NATIVE_NID = "0x1.ICON";
+
     @BeforeEach
     void setup() throws Exception {
         mockBalanced = new MockBalanced(sm, owner);
@@ -82,7 +85,7 @@ public class SourceWeightControllerTest extends UnitTest {
 
         BigInteger currentTime = BigInteger.valueOf(sm.getBlock().getTimestamp());
         BigInteger unlockTime = currentTime.add(MICRO_SECONDS_IN_A_DAY.multiply(BigInteger.valueOf(365)));
-        when(bBaln.mock.lockedEnd(any(Address.class))).thenReturn(unlockTime);
+        when(bBaln.mock.lockedEndV2(any(String.class))).thenReturn(unlockTime);
     }
 
     @Test
@@ -281,11 +284,11 @@ public class SourceWeightControllerTest extends UnitTest {
         sm.getBlock().increase();
 
         BigInteger timeAfterVote2 = BigInteger.valueOf(sm.getBlock().getTimestamp());
-
+        NetworkAddress userNetworkAddress = NetworkAddress.valueOf(user.getAddress().toString(), NATIVE_NID);
         // Assert
-        BigInteger lastUserVoteICX = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX" +
+        BigInteger lastUserVoteICX = (BigInteger) weightController.call("getLastUserVote", userNetworkAddress, "sICX" +
                 "/ICX");
-        BigInteger lastUserVoteBnUSD = (BigInteger) weightController.call("getLastUserVote", user.getAddress(), "sICX" +
+        BigInteger lastUserVoteBnUSD = (BigInteger) weightController.call("getLastUserVote", userNetworkAddress, "sICX" +
                 "/bnUSD");
 
         assertTrue(lastUserVoteICX.compareTo(timeBeforeVote) > 0 && lastUserVoteICX.compareTo(timeAfterVote1) < 0);
@@ -293,10 +296,10 @@ public class SourceWeightControllerTest extends UnitTest {
     }
 
     private void vote(Account user, String name, BigInteger weight) {
-        weightController.invoke(user, "voteForSourceWeights", name, weight);
+        weightController.invoke(user, "voteForSourceWeights", new NetworkAddress(NATIVE_NID, user.getAddress()).toString(), name, weight);
     }
 
     private void mockUserWeight(Account user, BigInteger weight) {
-        when(bBaln.mock.getLastUserSlope(user.getAddress())).thenReturn(weight);
+        when(bBaln.mock.getLastUserSlopeV2(NetworkAddress.valueOf(user.getAddress().toString(), NATIVE_NID).toString())).thenReturn(weight);
     }
 }

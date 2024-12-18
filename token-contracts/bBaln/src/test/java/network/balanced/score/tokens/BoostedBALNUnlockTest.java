@@ -19,6 +19,7 @@ package network.balanced.score.tokens;
 import com.iconloop.score.test.Score;
 import com.iconloop.score.test.ServiceManager;
 
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.lib.test.mock.MockBalanced;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.tokens.utils.DummyContract;
@@ -50,6 +51,8 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
 
     private BoostedBalnImpl scoreSpy;
 
+    private static final String NATIVE_NID = "0x1.ICON";
+
     public static BigInteger WEEK =
             BigInteger.TEN.pow(6).multiply(BigInteger.valueOf(86400L).multiply(BigInteger.valueOf(7L)));
     private static final BigInteger INITIAL_SUPPLY = BigInteger.TEN.multiply(ICX);
@@ -59,6 +62,7 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
     @BeforeEach
     public void setup() throws Exception {
         MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
 
         bBALNScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), B_BALANCED_SYMBOL);
@@ -153,20 +157,20 @@ public class BoostedBALNUnlockTest extends AbstractBoostedBalnTest {
         doNothing().when(scoreSpy).onKick(any());
         tokenScore.invoke(owner, "transfer", bBALNScore.getAddress(), ICX.multiply(BigInteger.ONE), lockBytes);
 
-        Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
+        //Map<String, BigInteger> balance = (Map<String, BigInteger>) bBALNScore.call("getLocked", owner.getAddress());
 
         BigInteger halfTime =
                 BigInteger.valueOf(unlockTime).divide(MICRO_SECONDS_IN_A_SECOND).divide(BigInteger.valueOf(4));
 
         sm.getBlock().increase(halfTime.longValue());
         bBALNScore.invoke(owner, "kick", owner.getAddress());
-
-        verify(scoreSpy, times(2)).onBalanceUpdate(eq(owner.getAddress()), any(BigInteger.class));
+        String stringOwner = new NetworkAddress(NATIVE_NID, owner.getAddress()).toString();
+        verify(scoreSpy, times(2)).onBalanceUpdate(eq(stringOwner), any(BigInteger.class));
 
         sm.getBlock().increase(halfTime.longValue());
         bBALNScore.invoke(owner, "kick", owner.getAddress());
 
-        verify(scoreSpy).onKick(owner.getAddress());
+        verify(scoreSpy).onKick(stringOwner);
     }
 
     private static Stream<Arguments> weekListLock() {

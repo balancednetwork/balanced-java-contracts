@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 class DividendsImplTestBase extends UnitTest {
     protected static final ServiceManager sm = getServiceManager();
@@ -47,6 +48,8 @@ class DividendsImplTestBase extends UnitTest {
     protected static MockContract<BalancedToken> baln;
     protected static MockContract<BoostedBaln> bBaln;
     protected static MockContract<Governance> governance;
+
+    public final String NATIVE_NID = "0x1.ICON";
 
     protected Score dividendScore;
 
@@ -75,9 +78,12 @@ class DividendsImplTestBase extends UnitTest {
         baln = mockBalanced.baln;
         bBaln = mockBalanced.bBaln;
         governance = mockBalanced.governance;
-
+        
+        when(mockBalanced.xCall.mock.getNetworkId()).thenReturn(NATIVE_NID);
         dividendScore = sm.deploy(owner, DividendsImpl.class, governance.getAddress());
         DividendsImpl dividendsSpy = (DividendsImpl) spy(dividendScore.getInstance());
         dividendScore.setInstance(dividendsSpy);
+
+
     }
 }
