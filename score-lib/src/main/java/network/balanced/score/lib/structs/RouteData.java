@@ -75,6 +75,17 @@ public class RouteData {
         w.end();
     }
 
+    public static void writeObjectOld(ObjectWriter w, RouteData obj) {
+        w.beginList(obj.actions.size()+3);
+        w.write(obj.method);
+        w.writeNullable(obj.receiver);
+        w.writeNullable(obj.minimumReceive);
+        for (RouteAction action : obj.actions) {
+            w.write(action);
+        }
+        w.end();
+    }
+
     public static RouteData fromBytes(byte[] bytes) {
         ObjectReader reader = Context.newByteArrayObjectReader("RLPn", bytes);
         return RouteData.readObject(reader);
@@ -91,4 +102,9 @@ public class RouteData {
         return writer.toByteArray();
     }
 
+    public byte[] toBytesOld() {
+        ByteArrayObjectWriter writer = Context.newByteArrayObjectWriter("RLPn");
+        RouteData.writeObjectOld(writer, this);
+        return writer.toByteArray();
+    }
 }

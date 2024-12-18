@@ -177,7 +177,7 @@ public class SavingsImpl extends FloorLimited implements Savings {
         Context.require(!unpackedData.equals(""), "Token Fallback: Data can't be empty");
         JsonObject json =  Json.parse(unpackedData).asObject();
         String method = json.get("method").asString();
-        if(json.get("params")!=null) {
+        if(json.contains("params")) {
             JsonObject params = json.get("params").asObject();
             if (params.get("to") != null) {
                 _from = params.get("to").asString();

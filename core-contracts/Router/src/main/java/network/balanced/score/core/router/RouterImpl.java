@@ -322,7 +322,7 @@ public class RouterImpl implements Router {
 
         Address fromToken = Context.getCaller();
         byte[] _data = EMPTY_DATA;
-        if(params.get("data")!=null){
+        if(params.contains("data")){
             _data = params.get("data").asString().getBytes();
         }
         route(receiver, fromToken, actions, minimumReceive, _data);

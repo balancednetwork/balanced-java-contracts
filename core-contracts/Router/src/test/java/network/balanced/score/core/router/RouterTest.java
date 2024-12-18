@@ -505,6 +505,41 @@ class RouterTest extends TestBase {
     }
 
     @Test
+    void tokenFallback_swapStableOldRouteData() throws Exception {
+        // Arrange
+        BigInteger balnToSwap = BigInteger.TEN.multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS);
+        List<MockContract<IRC2>> tokens = new ArrayList<>(MAX_NUMBER_OF_ITERATIONS - 1);
+        for (int i = 0; i < MAX_NUMBER_OF_ITERATIONS; i++) {
+            if (i == 0) {
+                actions.add(new RouteAction(SWAP, balanced.sicx.getAddress()));
+                continue;
+            }
+            MockContract<IRC2> token = new MockContract<>(IRC2ScoreInterface.class, IRC2.class, sm, owner);
+            when(token.mock.balanceOf(routerScore.getAddress())).thenReturn(balnToSwap);
+            actions.add(new RouteAction(STABILITY_SWAP, token.getAddress()));
+            tokens.add(token);
+        }
+
+        Account newReceiver = sm.createAccount();
+        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions, null).toBytesOld();
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), balnToSwap,
+                data);
+
+        // Assert
+        int i = 0;
+        for (MockContract<IRC2> token : tokens) {
+            if (i < tokens.size() - 1) {
+                byte[] d = tokens.get(i + 1).getAddress().toString().getBytes();
+                verify(token.mock).transfer(balanced.stability.getAddress(), balnToSwap, d);
+            }
+            i++;
+        }
+    }
+
+    @Test
     void tokenFallback_swapToICX() throws Exception {
         // Arrange
         BigInteger USDToSwap = BigInteger.TEN.multiply(ICX);
@@ -518,6 +553,29 @@ class RouterTest extends TestBase {
 
         Account newReceiver = sm.createAccount();
         byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions, null).toBytes();
+
+        // Act
+        routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), USDToSwap,
+                data);
+
+        // Assert
+        assertEquals(ICXResult, newReceiver.getBalance());
+    }
+
+    @Test
+    void tokenFallback_swapToICXOldRouteData() throws Exception {
+        // Arrange
+        BigInteger USDToSwap = BigInteger.TEN.multiply(ICX);
+        BigInteger sICXResult = BigInteger.valueOf(100).multiply(ICX);
+        BigInteger ICXResult = BigInteger.valueOf(110).multiply(ICX);
+        List<RouteAction> actions = new ArrayList<>(2);
+        actions.add(new RouteAction(SWAP, balanced.sicx.getAddress()));
+        actions.add(new RouteAction(SWAP, null));
+        when(balanced.sicx.mock.balanceOf(routerScore.getAddress())).thenReturn(sICXResult);
+        routerScore.getAccount().addBalance("ICX", ICXResult);
+
+        Account newReceiver = sm.createAccount();
+        byte[] data = new RouteData("_swap", newReceiver.getAddress().toString(), BigInteger.ZERO, actions, null).toBytesOld();
 
         // Act
         routerScore.invoke(balanced.baln.account, "tokenFallback", owner.getAddress(), USDToSwap,
