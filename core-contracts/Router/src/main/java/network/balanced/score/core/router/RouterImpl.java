@@ -245,8 +245,18 @@ public class RouterImpl implements Router {
         executeRoute(_from, _data);
     }
 
+    private RouteData getRouteData(byte[] data){
+        RouteData routeData;
+        try {
+            routeData = RouteData.fromBytes(data);
+        }catch(IllegalStateException ignored ){
+            routeData = RouteData.fromBytesOld(data);
+        }
+        return routeData;
+    }
+
     private void executeRoute(String _from, byte[] data) {
-        RouteData routeData = RouteData.fromBytes(data);
+        RouteData routeData = getRouteData(data);
         Context.require(routeData.method.contains("_swap"), TAG + ": Fallback directly not allowed.");
 
         Address fromToken = Context.getCaller();
@@ -261,8 +271,11 @@ public class RouterImpl implements Router {
         } else {
             receiver = _from;
         }
-
-        route(receiver, fromToken, routeData.actions, minimumReceive, EMPTY_DATA);
+        byte[] _data = EMPTY_DATA;
+        if(routeData.data!=null){
+            _data = routeData.data;
+        }
+        route(receiver, fromToken, routeData.actions, minimumReceive, _data);
     }
 
     private void jsonRoute(String _from, byte[] data) {
@@ -308,7 +321,11 @@ public class RouterImpl implements Router {
         }
 
         Address fromToken = Context.getCaller();
-        route(receiver, fromToken, actions, minimumReceive, EMPTY_DATA);
+        byte[] _data = EMPTY_DATA;
+        if(params.contains("data")){
+            _data = params.get("data").asString().getBytes();
+        }
+        route(receiver, fromToken, actions, minimumReceive, _data);
     }
 
     @Payable
