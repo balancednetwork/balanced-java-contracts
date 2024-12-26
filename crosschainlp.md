@@ -49,6 +49,26 @@ to the spoke Xcall contract on `sendCall` method. A call to Solana Xcall contrac
       const to = { "0": "0x2.icon/"+icon_dex }; //icon nid hardcoded
       let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to) ....
+        
+    function getAddLPData(
+      baseToken: string,
+      quoteToken: string,
+      baseValue: number,
+      quoteValue: number,
+      withdrawUnused: boolean,
+      slippagePercentage: number
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xAdd",
+        baseToken,
+        quoteToken,
+        baseValue,
+        quoteValue,
+        withdrawUnused?1:0,
+        slippagePercentage
+      ];
+      return rlp.encode(rlpInput);
+    }
 ```
 
 
@@ -70,6 +90,21 @@ method that looks like:
       const to = { "0": "0x2.icon/"+icon_dex };
       let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to) ....
+        
+    function getStakeData(
+      to: string,
+      amount: bigint,
+      poolId: number
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xhubtransfer",
+        Buffer.from(to, "utf-8"),
+        amount,
+        poolId,
+        Buffer.alloc(0)
+      ];
+      return rlp.encode(rlpInput);
+    }
 ```
 
 
@@ -90,6 +125,18 @@ Solana blockchain:
       const to = { "0": "0x2.icon/"+icon_rewards };
       let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to) .....
+        
+    function getClaimRewardData(
+      to: string,
+      sources: string[]
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xclaimrewards",
+        to,
+        sources,
+      ];
+      return rlp.encode(rlpInput);
+    }
 ```
 
 ### Unstake LP tokens
@@ -108,6 +155,18 @@ Xcall method. here is a sample script for the Solana blockchain
       const to = { "0": "0x2.icon/"+icon_stakedlp };
       let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to)....
+        
+    function getUnStakeData(
+      poolId: number,
+      amount: number
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xunstake",
+        poolId,
+        amount
+      ];
+      return rlp.encode(rlpInput);
+    }
 ```
 ###
 To remove the liquidity from a pool: 
@@ -124,6 +183,20 @@ To remove the liquidity from a pool:
       const to = { "0": "0x2.icon/"+icon_dex };
       let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to)....
+        
+    function getXRemoveData(
+      poolId: number,
+      lpTokenBalance: number,
+      withdraw: boolean
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xremove",
+        poolId,
+        lpTokenBalance,
+        withdraw?1:0
+      ];
+      return rlp.encode(rlpInput);
+    }
 ```
 ###
 To withdraw the deposited amount: 
@@ -141,4 +214,17 @@ To withdraw the deposited amount:
       const to = { "0": "0x2.icon/"+icon_dex };
       let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to)...
+        
+    function getWithdrawData(
+      token: string,
+      amount: number
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xwithdraw",
+        token,
+        amount
+      ];
+      return rlp.encode(rlpInput);
+    }
+     
 ```
