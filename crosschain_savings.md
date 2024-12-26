@@ -70,6 +70,14 @@ spooke chain:
     const to = { "0": "0x2.icon/"+icon_savings };
     let sendCallIx = await xcall_program.methods
       .sendCall(Buffer.from(envelope), to)...
+      
+    function getClaimRewardData(
+    ): Uint8Array {
+      let rlpInput: rlp.Input = [
+        "xclaimrewards",
+      ];
+      return rlp.encode(rlpInput);
+    }
 ```
 ### Unlock
 To unlock the locked bnUSD:
@@ -97,7 +105,15 @@ To unlock the locked bnUSD:
     console.log(Buffer.from(envelope));
     let sendCallIx = await xcall_program.methods
         .sendCall(Buffer.from(envelope), to)...
-
+    function getUnlockData(
+        amount: number,
+      ): Uint8Array {
+        let rlpInput: rlp.Input = [
+          "xunlock",
+          amount
+        ];
+        return rlp.encode(rlpInput);
+      }
 ```
 ## USDC Staking feature
 USDC staking is a feature in which USDC can be locked to the savings contract to earn the savings
@@ -106,7 +122,7 @@ to the savings contract. When unlocking it user will get bnUSD as normal bnUSD u
 savings features enabled even spoke chain USDC can be staked now(example is provided above- any supported 
 token can be staked now from the spoke chain). In ICON chain it can be done by transfering USDC to `Router`
 Contract with following data build with java code for example: 
-```java
+```javascript
     public static byte[] tokenData(String method, Map<String, Object> params) {
         Map<String, Object> map = new HashMap<>();
         map.put("method", method);
