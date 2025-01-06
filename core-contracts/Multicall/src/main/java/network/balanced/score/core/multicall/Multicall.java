@@ -85,7 +85,7 @@ public class Multicall {
                 results[i] = Address.fromString(params[i]);
             } else if (params[i].equals("false") || params[i].equals("true")) {
                 results[i] = Boolean.parseBoolean(params[i]);
-            } else if (params[i].startsWith("0x")) {
+            } else if (params[i].startsWith("0x") && !params[i].contains("/")) {
                 results[i] = new BigInteger(params[i].substring(2), 16);
             } else {
                 results[i] = params[i];
