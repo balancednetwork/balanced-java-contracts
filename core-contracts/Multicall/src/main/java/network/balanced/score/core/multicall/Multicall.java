@@ -90,6 +90,7 @@ public class Multicall {
             } else {
                 results[i] = params[i];
             }
+
         }
         return results;
     }
