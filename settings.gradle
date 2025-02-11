@@ -135,3 +135,9 @@ project(':SpokeXCallManager').projectDir = file("spoke-contracts/SpokeXCallManag
 
 include(':SpokeBalancedDollar')
 project(':SpokeBalancedDollar').projectDir = file("spoke-contracts/SpokeBalancedDollar")
+
+include(':NonFungiblePositionManager')
+project(':NonFungiblePositionManager').projectDir = file("core-contracts/NonFungiblePositionManager")
+
+include(':irc721')
+project(':irc721').projectDir = file("token-contracts/irc721")
