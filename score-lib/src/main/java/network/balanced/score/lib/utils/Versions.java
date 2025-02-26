@@ -44,6 +44,7 @@ public class Versions {
     public final static String BURNER = "v1.0.0";
     public final static String SAVINGS = "v1.0.1";
     public final static String TRICKLER = "v1.0.0";
+    public final static String WICX = "v1.0.1";
 
     public final static String SPOKE_ASSET_MANAGER = "v1.0.2";
     public final static String SPOKE_XCALL_MANAGER = "v1.0.1";
