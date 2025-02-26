@@ -87,7 +87,7 @@ public class WICX extends PayableIRC2Base {
     }
 
     BigInteger getICXDeposit() {
-        return getICXDeposit();
+        return Context.getValue();
     }
 
 }
