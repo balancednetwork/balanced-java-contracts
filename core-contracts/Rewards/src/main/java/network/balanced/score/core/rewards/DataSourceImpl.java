@@ -257,17 +257,7 @@ public class DataSourceImpl {
 
     @SuppressWarnings("unchecked")
     public Map<String, BigInteger> loadCurrentSupply(String owner) {
-        // Bad handling that is only relevant during migration, otherwise it will always succeed on first scenario
-        try {
-            return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), owner);
-        } catch (Exception e) {
-            try {
-                return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), Address.fromString(owner));
-            } catch (Exception _e) {
-                return Map.of("_totalSupply", BigInteger.ZERO,
-                        "_balance", BigInteger.ZERO);
-            }
-        }
+        return (Map<String, BigInteger>) Context.call(getContractAddress(), "getBalanceAndSupply", getName(), owner);
     }
 
     public Map<Address, BigInteger> updateSingleUserData(BigInteger currentTime, BalanceData balances, String user, boolean readOnlyContext) {

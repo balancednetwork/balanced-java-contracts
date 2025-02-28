@@ -194,15 +194,20 @@ public class RewardsImpl implements Rewards {
     public Map<String, BigInteger> getRewards(String _holder) {
         Map<String, BigInteger> accruedRewards = getHoldings(_holder);
         int dataSourcesCount = DataSourceDB.size();
+        BigInteger currentTime = getTime();
+
         for (int i = 0; i < dataSourcesCount; i++) {
             String name = DataSourceDB.names.get(i);
             DataSourceImpl dataSource = DataSourceDB.get(name);
-            BigInteger currentTime = getTime();
             BalanceData balances = new BalanceData();
+            balances.prevWorkingBalance = dataSource.getWorkingBalance(_holder);
+            if (balances.prevWorkingBalance.compareTo(BigInteger.ZERO) <= 0) {
+                continue;
+            }
+
             balances.prevBalance = dataSource.getBalance(_holder);
             balances.prevSupply = dataSource.getTotalSupply();
-            balances.prevWorkingBalance = dataSource.getWorkingBalance(_holder, true);
-            balances.prevWorkingSupply = dataSource.getWorkingSupply(true);
+            balances.prevWorkingSupply = dataSource.getWorkingSupply();
             Map<Address, BigInteger> sourceRewards = dataSource.updateSingleUserData(currentTime, balances, _holder, true);
             for (Map.Entry<Address, BigInteger> entry : sourceRewards.entrySet()) {
                 accruedRewards.put(entry.getKey().toString(), accruedRewards.get(entry.getKey().toString()).add(entry.getValue()));
