@@ -169,7 +169,6 @@ public class DividendsIntegrationTest {
         Map<String, BigInteger> unclaimedDividendsBeforeBob = reader.dividends.getUnclaimedDividends(addressBob);
 
         // user unstakes all the baln token
-        alice.baln.stake(BigInteger.ZERO);
         BigInteger availableBalnBalance = alice.baln.availableBalanceOf(addressAlice);
 
         long unlockTime =
@@ -257,35 +256,7 @@ public class DividendsIntegrationTest {
         assertEquals(unclaimedDividendsAfterEve, BigInteger.ZERO);
     }
 
-    @Test
-    @Order(6)
-    void testBBaln_claimAfterUnstake() {
-        /* Ferry claims the dividends after unstaking baln token. */
-        Address addressFerry = Ferry.getAddress();
-        BigInteger unclaimedDividendsBeforeFerry =
-                owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
-        BigInteger bnusdBeforeFerry = Ferry.bnUSD.balanceOf(addressFerry);
-        // Ferry unstakes baln token
-        Ferry.baln.stake(BigInteger.ZERO);
-        Ferry.dividends.claimDividends();
-        BigInteger unclaimedDividendsAfterFerry =
-                owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
-        BigInteger bnusdAfterFerry = Eve.bnUSD.balanceOf(addressFerry);
-        // unclaimed dividends become 0 after claiming
-        assertEquals(unclaimedDividendsAfterFerry, BigInteger.ZERO);
-        // unclaimed dividends should go to Eve's wallet after claiming
-        assertEquals(bnusdBeforeFerry.add(unclaimedDividendsBeforeFerry), bnusdAfterFerry);
 
-        BigInteger collateral = BigInteger.valueOf(500).multiply(BigInteger.TEN.pow(18));
-        BigInteger loanAmount = BigInteger.valueOf(100).multiply(BigInteger.TEN.pow(18));
-        owner.stakeDepositAndBorrow(collateral, loanAmount);
-        unclaimedDividendsAfterFerry =
-                owner.dividends.getUnclaimedDividends(addressFerry).get(balanced.bnusd._address().toString());
-
-        // unclaimed dividends remains 0 for that user
-        assertEquals(unclaimedDividendsAfterFerry, BigInteger.ZERO);
-
-    }
 
     @Test
     @Order(7)
@@ -519,13 +490,6 @@ public class DividendsIntegrationTest {
         owner.baln.transfer(addressCharlie, collateral, new byte[0]);
         owner.baln.transfer(addressEve, collateral, new byte[0]);
         owner.baln.transfer(addressFerry, collateral, new byte[0]);
-
-        // staking baln token with multiple different users.
-        BigInteger stakedAmount = BigInteger.valueOf(50).multiply(BigInteger.TEN.pow(18));
-        alice.baln.stake(stakedAmount);
-        bob.baln.stake(stakedAmount);
-        Eve.baln.stake(stakedAmount);
-        Ferry.baln.stake(stakedAmount);
 
         // loan taken to send some dividends to contract
         owner.stakeDepositAndBorrow(collateral, loanAmount);
