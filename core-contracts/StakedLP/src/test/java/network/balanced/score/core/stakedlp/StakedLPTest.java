@@ -318,7 +318,7 @@ public class StakedLPTest extends UnitTest {
         assertEquals(totalStakedBalanceBeforeUnstake, stakedLpScore.call("totalStaked",
                 BigInteger.ONE));
         verify(dex.mock).hubTransfer(NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(), aliceUnstakeAmount, BigInteger.ONE, new byte[0]);
-        verify(rewards.mock).updateBalanceAndSupply(poolOneName, totalStakedBalanceBeforeUnstake, NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(),
+        verify(rewards.mock).updateBalanceAndSupply(poolOneName, totalStakedBalanceBeforeUnstake, alice.getAddress().toString(),
                 aliceStakedBalance);
 
         // Adjust the values after first unstake
@@ -389,6 +389,6 @@ public class StakedLPTest extends UnitTest {
         balanceAndSupply = (Map<String, BigInteger>) stakedLpScore.call("getBalanceAndSupply", name, alice.getAddress().toString());
         assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_balance"));
         assertEquals(BigInteger.valueOf(8), balanceAndSupply.get("_totalSupply"));
-        verify(rewards.mock).updateBalanceAndSupply(name, balanceAndSupply.get("_totalSupply"), NetworkAddress.valueOf(alice.getAddress().toString(), NATIVE_NID).toString(), balanceAndSupply.get("_balance"));
+        verify(rewards.mock).updateBalanceAndSupply(name, balanceAndSupply.get("_totalSupply"), alice.getAddress().toString(), balanceAndSupply.get("_balance"));
     }
 }
