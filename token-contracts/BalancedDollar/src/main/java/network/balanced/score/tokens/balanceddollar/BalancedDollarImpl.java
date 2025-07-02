@@ -22,6 +22,8 @@ import network.balanced.score.lib.tokens.HubTokenImpl;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.Names;
 import network.balanced.score.lib.utils.Versions;
+import network.balanced.score.lib.utils.ArrayDBUtils;
+
 import score.Address;
 import score.Context;
 import score.VarDB;
@@ -54,6 +56,9 @@ public class BalancedDollarImpl extends HubTokenImpl implements BalancedDollar {
         }
 
         NATIVE_NID = Context.call(String.class, BalancedAddressManager.getXCall(), "getNetworkId");
+        if (connectedChains.size() > 0) {
+            ArrayDBUtils.removeFromArraydb(NetworkAddress.parse("stellar/CAKU2J5T4TOMFATA56XRDZMQHNBFIOQW3JDZQNQBLNLV7LEWYTNYU6VX"), connectedChains);
+        }
 
         if (this.currentVersion.getOrDefault("").equals(Versions.BNUSD)) {
             Context.revert("Can't Update same version of code");
