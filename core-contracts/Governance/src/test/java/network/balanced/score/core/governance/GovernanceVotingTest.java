@@ -112,6 +112,26 @@ public class GovernanceVotingTest extends GovernanceTestBase {
     }
 
     @Test
+    void defineVote_isShutdown() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger day = (BigInteger) governance.call("getDay");
+        String name = "test";
+        String forumLink = "https://gov.balanced.network/";
+        String description = "test vote";
+        BigInteger voteStart = day.add(BigInteger.TWO);
+        BigInteger voteDuration = BigInteger.TWO;
+        String actions = "[]";
+        String expectedErrorMessage;
+        governance.invoke(owner, "setIsShutdown", true);
+
+        Executable whenShutdown = () -> governance.invoke(account, "defineVote", name, description, voteStart,
+            voteDuration, forumLink, actions);
+        expectErrorMessage(whenShutdown, "SenderNotScoreOwnerOrContract");
+
+    }
+
+    @Test
     void cancelVote_Owner() {
         // Arrange
         sm.getBlock().increase(DAY);

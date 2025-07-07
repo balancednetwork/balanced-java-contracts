@@ -355,6 +355,12 @@ public class RewardsImpl implements Rewards {
     }
 
     private boolean mintAndAllocateBalnReward(BigInteger platformDay) {
+        if (Context.call(Boolean.class, BalancedAddressManager.getGovernance(), "getIsShutdown")) {
+            dailyVotableDistribution.set(platformDay, BigInteger.ZERO);
+            RewardsImpl.platformDay.set(platformDay.add(BigInteger.ONE));
+            return false;
+        }
+
         BigInteger distribution = dailyDistribution(platformDay);
         Context.call(getBaln(), "mint", distribution, new byte[0]);
 

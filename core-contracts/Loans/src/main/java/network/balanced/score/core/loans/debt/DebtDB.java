@@ -215,6 +215,11 @@ public class DebtDB {
         }
 
         accumulatedInterest.set(BigInteger.ZERO);
+        if (Context.call(Boolean.class, BalancedAddressManager.getGovernance(), "getIsShutdown")) {
+            TokenUtils.mintAssetTo(BalancedAddressManager.getFeehandler(), accumulatedAmount);
+            return;
+        }
+
         BigInteger savingsRateAmount = savingsShare.get().multiply(accumulatedAmount).divide(POINTS);
         TokenUtils.mintAssetTo(BalancedAddressManager.getSavings(), savingsRateAmount);
         TokenUtils.mintAssetTo(BalancedAddressManager.getFeehandler(), accumulatedAmount.subtract(savingsRateAmount));

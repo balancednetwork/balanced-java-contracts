@@ -243,6 +243,9 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         BigInteger maxPenalty = value.divide(BigInteger.TWO);
         BigInteger variablePenalty = balanceOf(sender, null);
         BigInteger penaltyAmount = variablePenalty.min(maxPenalty);
+        if (Context.call(Boolean.class, BalancedAddressManager.getGovernance(), "getIsShutdown")) {
+            penaltyAmount = BigInteger.ZERO;
+        }
         BigInteger returnAmount = value.subtract(penaltyAmount);
 
         LockedBalance oldLocked = locked.newLockedBalance();
@@ -255,8 +258,10 @@ public class BoostedBalnImpl extends AbstractBoostedBaln {
         this.checkpoint(sender, oldLocked, locked);
 
 
+        if( penaltyAmount.compareTo(BigInteger.ZERO) > 0) {
         Context.call(getBaln(), "transfer", this.penaltyAddress.get(), penaltyAmount,
                 "withdrawPenalty".getBytes());
+        }
         Context.call(getBaln(), "transfer", sender, returnAmount, "withdrawEarly".getBytes());
 
         users.remove(sender);

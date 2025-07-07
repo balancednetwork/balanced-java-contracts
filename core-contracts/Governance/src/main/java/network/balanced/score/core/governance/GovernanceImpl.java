@@ -54,6 +54,7 @@ public class GovernanceImpl implements Governance {
     public static final VarDB<BigInteger> bnusdVoteDefinitionFee = Context.newVarDB(DEFINITION_FEE, BigInteger.class);
     public static final VarDB<BigInteger> quorum = Context.newVarDB(QUORUM, BigInteger.class);
     private final VarDB<String> currentVersion = Context.newVarDB(VERSION, String.class);
+    public static final VarDB<Boolean> isShutdown = Context.newVarDB("IS_SHUTDOWN", Boolean.class);
 
     public GovernanceImpl() {
         if (launched.getOrDefault(null) == null) {
@@ -93,6 +94,23 @@ public class GovernanceImpl implements Governance {
         onlyOwnerOrContract();
         Address SYSTEM_SCORE_ADDRESS = getSystemScoreAddress();
         Context.call(SYSTEM_SCORE_ADDRESS, "setScoreOwner", score, newOwner);
+    }
+
+    @External
+    public void setIsShutdown(boolean _isShutdown) {
+        onlyOwnerOrContract();
+        isShutdown.set(_isShutdown);
+    }
+
+    @External(readonly = true)
+    public boolean getIsShutdown() {
+        return isShutdown.getOrDefault(false);
+    }
+
+    protected void checkShutdownPermission() {
+        if (isShutdown.getOrDefault(false)) {
+            onlyOwnerOrContract();
+        }
     }
 
     @External
@@ -167,12 +185,14 @@ public class GovernanceImpl implements Governance {
     @External
     public void defineVote(String name, String description, BigInteger vote_start, BigInteger duration,
             String forumLink, @Optional String transactions) {
+        checkShutdownPermission();
         transactions = optionalDefault(transactions, "[]");
         ProposalManager.defineVote(name, description, vote_start, duration, forumLink, transactions);
     }
 
     @External
     public void cancelVote(BigInteger vote_index) {
+        checkShutdownPermission();
         ProposalManager.cancelVote(vote_index);
     }
 
@@ -201,6 +221,7 @@ public class GovernanceImpl implements Governance {
 
     @External
     public void evaluateVote(BigInteger vote_index) {
+        checkShutdownPermission();
         ProposalManager.evaluateVote(vote_index);
     }
 

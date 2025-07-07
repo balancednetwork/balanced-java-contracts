@@ -114,6 +114,9 @@ public class TricklerImpl implements Trickler {
 
     @External
     public void tokenFallback(Address _from, BigInteger _value, byte[] _data) {
+        if (Context.call(Boolean.class, BalancedAddressManager.getGovernance(), "getIsShutdown")) {
+            return;
+        }
         Address token = Context.getCaller();
         Context.require(tokensAllowList.contains(token), Names.TRICKLER + ": Can't accept this token");
 
@@ -125,6 +128,9 @@ public class TricklerImpl implements Trickler {
 
     @External
     public void claimRewards(Address token) {
+        if (Context.call(Boolean.class, BalancedAddressManager.getGovernance(), "getIsShutdown")) {
+            return;
+        }
         Context.require(tokensAllowList.contains(token), Names.TRICKLER + ": Token is not listed");
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger reward = getRewards(token);
@@ -153,6 +159,9 @@ public class TricklerImpl implements Trickler {
 
     @External(readonly = true)
     public BigInteger getRewards(Address token) {
+        if (Context.call(Boolean.class, BalancedAddressManager.getGovernance(), "getIsShutdown")) {
+            return BigInteger.ZERO;
+        }
         BigInteger currentBlock = BigInteger.valueOf(Context.getBlockHeight());
         BigInteger currentRate = tokenBlockRewardRate.getOrDefault(token, BigInteger.ZERO);
 
@@ -160,5 +169,11 @@ public class TricklerImpl implements Trickler {
         BigInteger reward = blockDiff.multiply(currentRate);
 
         return reward;
+    }
+
+    @External
+    public void transfer(Address _tokenAddress, Address _targetAddress, BigInteger _amount) {
+        onlyOwner();
+        Context.call(_tokenAddress, "transfer", _targetAddress, _amount, new byte[0]);
     }
 }
