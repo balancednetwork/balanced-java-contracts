@@ -20,6 +20,7 @@ import network.balanced.score.lib.interfaces.tokens.HubToken;
 import network.balanced.score.lib.interfaces.tokens.HubTokenXCall;
 import network.balanced.score.lib.utils.BalancedAddressManager;
 import network.balanced.score.lib.utils.XCallUtils;
+import network.balanced.score.lib.utils.ArrayDBUtils;
 import score.Address;
 import score.ArrayDB;
 import score.Context;
@@ -71,6 +72,14 @@ public class HubTokenImpl extends SpokeTokenImpl implements HubToken {
 
         return chains;
     }
+
+
+    @External
+    public void removeChain(String _networkAddress) {
+        onlyOwner();
+        ArrayDBUtils.removeFromArraydb(NetworkAddress.parse(_networkAddress), connectedChains);
+    }
+
 
     @External
     public void addChain(String _networkAddress, BigInteger limit) {
