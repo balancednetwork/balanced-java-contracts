@@ -176,7 +176,11 @@ public class StakedLPImpl implements StakedLP {
 
         Unstake(user.toString(), id, value);
 
-        Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
+        if (user.net().equals(NATIVE_NID)) {
+            Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.account(), newBalance);
+        } else {
+            Context.call(rewards.get(), "updateBalanceAndSupply", poolName, newTotal, user.toString(), newBalance);
+        }
 
         try {
             Context.call(dex.get(), "hubTransfer", user.toString(), value, id, new byte[0]);
@@ -209,11 +213,21 @@ public class StakedLPImpl implements StakedLP {
         dataSourceNames.set(id, name);
     }
 
+    @External
+    public void kick(String _name, Address _owner) {
+        BigInteger poolId = dataSourceIds.get(_name);
+        BigInteger totalSupply = totalStaked(poolId);
+        BigInteger balance = balanceOf(_owner, poolId);
+
+        Context.call(rewards.get(), "updateBalanceAndSupply", _name, totalSupply, _owner.toString(), balance);
+        Context.call(rewards.get(), "updateBalanceAndSupply", _name, totalSupply, new NetworkAddress(NATIVE_NID, _owner).toString(), 0);
+    }
+
     @External(readonly = true)
     public Map<String, BigInteger> getBalanceAndSupply(String _name, String _owner) {
         BigInteger poolId = dataSourceIds.get(_name);
         BigInteger totalSupply = totalStaked(poolId);
-        BigInteger balance = balanceOf(Address.fromString(_owner), poolId);
+        BigInteger balance = xBalanceOf(_owner, poolId);
 
         Map<String, BigInteger> rewardsData = new HashMap<>();
         rewardsData.put("_balance", balance);
