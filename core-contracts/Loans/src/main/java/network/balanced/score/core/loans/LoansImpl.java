@@ -19,6 +19,8 @@ package network.balanced.score.core.loans;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+
+import foundation.icon.xcall.NetworkAddress;
 import network.balanced.score.core.loans.collateral.CollateralDB;
 import network.balanced.score.core.loans.debt.DebtDB;
 import network.balanced.score.core.loans.positions.Position;

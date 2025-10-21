@@ -62,6 +62,26 @@ class RewardsTestRewards extends RewardsTestBase {
     }
 
     @Test
+    void distribute_shutdown() {
+        // Act
+        when(mockBalanced.governance.mock.getIsShutdown()).thenReturn(true);
+
+        sm.getBlock().increase(DAY);
+        syncDistributions();
+        int day = ((BigInteger) rewardsScore.call("getDay")).intValue();
+
+        // Assert
+        BigInteger emission = (BigInteger) rewardsScore.call("getEmission", BigInteger.valueOf(-1));
+
+        verify(baln.mock, times(0)).transfer(bwt.getAddress(),
+            BigInteger.ZERO, new byte[0]);
+        verify(baln.mock, times(0)).transfer(daoFund.getAddress(),
+            BigInteger.ZERO, new byte[0]);
+        verify(baln.mock, times(0)).transfer(reserve.getAddress(),
+            BigInteger.ZERO, new byte[0]);
+    }
+
+    @Test
     void claimRewards_updateRewardsData() {
         // Arrange
         Account account = sm.createAccount();
@@ -99,6 +119,31 @@ class RewardsTestRewards extends RewardsTestBase {
                 expectedRewards.add(userSwapDistribution.multiply(diffInUSSwap).divide(MICRO_SECONDS_IN_A_DAY));
 
         verifyBalnReward(account.getAddress(), expectedRewards);
+    }
+
+
+    @Test
+    void claimRewards_updateRewardsData_isShutdown() {
+        // Arrange
+        Account account = sm.createAccount();
+        BigInteger loansBalance = BigInteger.ONE.multiply(EXA);
+        BigInteger loansTotalSupply = BigInteger.TEN.multiply(EXA);
+        BigInteger swapBalance = BigInteger.TWO.multiply(EXA);
+        BigInteger swapTotalSupply = BigInteger.TEN.multiply(EXA);
+        when(mockBalanced.governance.mock.getIsShutdown()).thenReturn(true);
+
+        // Act
+        mockBalanceAndSupply(loans, "Loans", account.getAddress(), loansBalance, loansTotalSupply);
+        mockBalanceAndSupply(dex, "sICX/ICX", account.getAddress(), swapBalance, swapTotalSupply);
+        rewardsScore.invoke(loans.account, "updateRewardsData", "Loans", loansTotalSupply.subtract(loansBalance),
+                account.getAddress(), BigInteger.ZERO);
+        rewardsScore.invoke(dex.account, "updateRewardsData", "sICX/ICX", swapTotalSupply.subtract(swapBalance),
+                account.getAddress(), BigInteger.ZERO);
+
+        sm.getBlock().increase(DAY*2);
+
+        // Assert
+        verify(baln.mock, times(0)).transfer(any(), any(), any());
     }
 
     @Test

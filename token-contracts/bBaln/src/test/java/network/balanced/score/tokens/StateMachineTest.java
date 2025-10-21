@@ -34,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @DisplayName("Statemachine Tests")
 public class StateMachineTest extends AbstractBoostedBalnTest {
@@ -46,7 +47,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
     private final ArrayList<Account> accounts = new ArrayList<>();
     private final long MAXIMUM_LOCK_WEEKS = 208;
     private final long BLOCK_TIME = 2 * 1_000_000;
-
+    protected MockBalanced mockBalanced;
     private Score bBalnScore;
     private BoostedBalnImpl scoreSpy;
 
@@ -81,7 +82,7 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        MockBalanced mockBalanced = new MockBalanced(sm, owner);
+        mockBalanced = new MockBalanced(sm, owner);
         MockBalanced.addressManagerMock.when(() -> BalancedAddressManager.getBaln()).thenReturn(tokenScore.getAddress());
 
         bBalnScore = sm.deploy(owner, BoostedBalnImpl.class, mockBalanced.governance.getAddress(), "bBALN");
@@ -432,6 +433,20 @@ public class StateMachineTest extends AbstractBoostedBalnTest {
             votingBalances.put(accounts.get(0), new VotingBalance());
 
             tokenScore.invoke(penaltyAddress, "transfer", accounts.get(0).getAddress(), penalty, new byte[0]);
+        }
+
+        @DisplayName("early before the expiry, when shutdown")
+        @Test
+        void unlockEarlyBeforeExpiry_isShutdown() {
+            when(mockBalanced.governance.mock.getIsShutdown()).thenReturn(true);
+            long increasedUnlockTime = addWeeksToCurrentTimestamp(180);
+            increaseUnlockTime(accounts.get(0), BigInteger.valueOf(increasedUnlockTime));
+            bBalnScore.invoke(accounts.get(0), "withdrawEarly");
+
+            assertEquals(MINT_AMOUNT, tokenScore.call("balanceOf",
+                    accounts.get(0).getAddress()));
+            votingBalances.put(accounts.get(0), new VotingBalance());
+
         }
 
         @DisplayName("early before the expiry, with max penalty")

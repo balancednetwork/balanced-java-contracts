@@ -40,8 +40,12 @@ public interface Governance extends
         Fallback,
         Version {
 
+
     @External(readonly = true)
     BigInteger getDay();
+
+    @External(readonly = true)
+    public boolean getIsShutdown();
 
     @External(readonly = true)
     Map<String, BigInteger> getVotersCount(BigInteger vote_index);

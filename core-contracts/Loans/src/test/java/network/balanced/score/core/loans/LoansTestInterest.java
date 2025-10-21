@@ -192,6 +192,36 @@ class LoansTestInterest extends LoansTestBase {
     }
 
     @Test
+    void claimInterest_isShutdown() {
+        // Arrange
+        when(mockBalanced.governance.mock.getIsShutdown()).thenReturn(true);
+
+        Account account = sm.createAccount();
+        BigInteger collateral = BigInteger.valueOf(1000000).multiply(EXA);
+        BigInteger loan = BigInteger.valueOf(100000).multiply(EXA);
+        BigInteger expectedFee = calculateFee(loan);
+        BigInteger expectedDebt = loan.add(expectedFee);
+        BigInteger timePassed = BigInteger.valueOf(20000);
+        BigInteger savingsShare = BigInteger.valueOf(4000);
+        loans.invoke(mockBalanced.governance.account, "setSavingsRateShare", savingsShare);
+
+        // Act
+        takeLoanICX(account, "bnUSD", collateral, loan);
+        sm.getBlock().increase(timePassed.longValue()/2);
+        loans.invoke(mockBalanced.governance.account, "applyInterest");
+        BigInteger debt = getUserDebt(account, "sICX");
+        loans.invoke(account, "claimInterest");
+
+        // Assert
+        BigInteger expectedInterest = expectedDebt.multiply(SICX_INTEREST).multiply(timePassed.multiply(MICRO_SECONDS_IN_A_SECOND))
+                .divide(YEAR_IN_MICRO_SECONDS.multiply(POINTS));
+        BigInteger interest = debt.subtract(expectedDebt);
+        assertTrue(expectedInterest.compareTo(EXA) > 0);
+        verify(mockBalanced.bnUSD.mock).mintTo(mockBalanced.feehandler.getAddress(), interest, new byte[0]);
+        assertRoundedEquals(expectedDebt.add(interest), debt);
+    }
+
+    @Test
     void permissions() {
         assertOnlyCallableBy(mockBalanced.governance.getAddress(), loans, "setSavingsRateShare", BigInteger.ONE);
         assertOnlyCallableBy(mockBalanced.governance.getAddress(), loans, "setInterestRate", "sICX", BigInteger.ONE);
