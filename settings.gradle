@@ -58,6 +58,9 @@ include 'test-lib'
 include(':WorkerToken')
 project(':WorkerToken').projectDir = file("token-contracts/WorkerToken")
 
+include(':WICX')
+project(':WICX').projectDir = file("token-contracts/WICX")
+
 include(':Router')
 project(':Router').projectDir = file("core-contracts/Router")
 
