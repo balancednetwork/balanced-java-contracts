@@ -89,6 +89,7 @@ fabric.properties
 build
 .DS_Store
 .vscode
+*.code-workspace
 .keystores
 .deployment
 gradle.properties
