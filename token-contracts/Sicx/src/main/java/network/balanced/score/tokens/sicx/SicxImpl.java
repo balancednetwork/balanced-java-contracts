@@ -111,9 +111,14 @@ public class SicxImpl extends HubTokenImpl implements Sicx {
     public void govTransfer(Address _from, Address _to, BigInteger _value, @Optional byte[] _data) {
         onlyOwner();
         if (!_to.equals(stakingAddress.get())) {
-            Context.call(stakingAddress.get(), "transferUpdateDelegations", Context.getCaller(), _to, _value);
+            Context.call(stakingAddress.get(), "transferUpdateDelegations",_from, _to, _value);
         }
-        super.transfer(_to, _value, _data);
+
+        super._transfer(
+            new NetworkAddress(super.NATIVE_NID, _from),
+            new NetworkAddress(super.NATIVE_NID, _to),
+            _value,
+            _data);
     }
 
     @Override
