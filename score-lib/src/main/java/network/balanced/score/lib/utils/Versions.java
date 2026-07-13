@@ -30,7 +30,7 @@ public class Versions {
     public final static String STABILITY = "v1.1.1";
     public final static String BALANCEDORACLE = "v1.2.0";
     public final static String DAOFUND = "v1.1.4";
-    public final static String DEX = "v1.1.8";
+    public final static String DEX = "v1.1.9";
     public final static String GOVERNANCE = "v1.0.2";
     public final static String REBALANCING = "v1.0.0";
     public final static String ROUTER = "v1.2.4";

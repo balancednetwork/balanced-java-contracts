@@ -1,0 +1,872 @@
+[
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "archway-1"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x100.icon"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x38.bsc"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0xa86a.avax"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "injective-1"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0xa4b1.arbitrum"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x2105.base"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0xa.optimism"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x89.polygon"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "sui"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "stellar"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx88fd7df7ddff82f7cc735c871dc519838cb235bb",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "solana"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0xa86a.avax"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x2105.base"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0xa.optimism"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0xa4b1.arbitrum"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x38.bsc"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "stellar"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "solana"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "sui"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "injective-1"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cxf61cd5a45dc9f91c15aa65831a30a90d59a09619",
+    "method": "setSpokeLimit",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "0x89.polygon"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx27fa4bdb0522e3be5a51daab06eb39889fb4c8da"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx66a031cc3bd305c76371fb586e93801b948254f0"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx2d552c485ec8bcaa75aac02424e2aca6ffdb2f1b"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx07b184a37f03c6ab681fcbd0b45aec6dc3eafbeb"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx5b5a03cb525a1845d0af3a872d525b18a810acb0"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx288d13e1b63563459a2ac6179f237711f6851cb5"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx0664cceb34d391ba78a897200fab94b9b49443d0"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx4297f4b63262507623b6ad575d0d8dd2db980e4e"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx4b48a4789636aa737285feec8908c765d8bc8042"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx65c9e3d4fea842e00add0d32a5b4c5e4e04c7a6b"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx508002ec116fbf3ab406329c0df28e70d7e75fb3"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cxb9d0727849a6ce6453f8c9dda2dec2fd543075d4"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx518f64edcd35db9044a2de63fdc10abfd5f7d611"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cxb8cf9a4700e0c804b780978bf9d9de759c62e787"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx2609b924e33ef00b648a409245c7ea394c467824"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cx15ddac8c2663bd7e71ca1688dffa426070752fbd"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cxce7b23917ddf57656010decd6017fe5016de681b"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setRedemptionExemption",
+    "parameters": [
+      {
+        "type": "Address",
+        "value": "cxb940dbfbc45c92f3a0cde464c4331102e7a84da8"
+      },
+      {
+        "type": "boolean",
+        "value": true
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "AFSUI"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "AVAX"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "BNB"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "BTC"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "BTCB"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "ETH"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "HASUI"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "INJ"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "JITOSOL"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "SOL"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "SUI"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "VSUI"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "XLM"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "mSUI"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "sICX"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "tBTC"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "weETH"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  },
+  {
+    "address": "cx66d4d90f5f113eba575bf793570135f9b10cece1",
+    "method": "setDebtCeiling",
+    "parameters": [
+      {
+        "type": "String",
+        "value": "wstETH"
+      },
+      {
+        "type": "int",
+        "value": "0x0"
+      }
+    ],
+    "value": "0x0"
+  }
+]
