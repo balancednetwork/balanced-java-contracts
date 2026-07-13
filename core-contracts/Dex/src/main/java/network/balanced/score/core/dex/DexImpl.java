@@ -289,6 +289,7 @@ public class DexImpl extends AbstractDex {
         require(_value.compareTo(userBalance) <= 0, TAG + ": Insufficient balance");
 
         Address quoteToken = poolQuote.get(_id.intValue());
+        require(!baseToken.equals(quoteToken), TAG + ": Invalid same-token pool, removal blocked");
         DictDB<Address, BigInteger> totalTokensInPool = poolTotal.at(_id.intValue());
         BigInteger totalBase = totalTokensInPool.get(baseToken);
         BigInteger totalQuote = totalTokensInPool.get(quoteToken);
@@ -350,7 +351,7 @@ public class DexImpl extends AbstractDex {
         // If none is found (return 0), we create a new pool.
         Integer id = poolId.at(_baseToken).getOrDefault(_quoteToken, 0);
 
-        require(_baseToken != _quoteToken, TAG + ": Pool must contain two token contracts");
+        require(!_baseToken.equals(_quoteToken), TAG + ": Pool must contain two token contracts");
         // Check base/quote balances are valid
         require(_baseValue.compareTo(BigInteger.ZERO) > 0,
                 TAG + ": Cannot send 0 or negative base token");
