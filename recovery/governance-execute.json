@@ -338,8 +338,8 @@
         "value": "cx27fa4bdb0522e3be5a51daab06eb39889fb4c8da"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -353,8 +353,8 @@
         "value": "cx66a031cc3bd305c76371fb586e93801b948254f0"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -368,8 +368,8 @@
         "value": "cx2d552c485ec8bcaa75aac02424e2aca6ffdb2f1b"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -383,8 +383,8 @@
         "value": "cx07b184a37f03c6ab681fcbd0b45aec6dc3eafbeb"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -398,8 +398,8 @@
         "value": "cx5b5a03cb525a1845d0af3a872d525b18a810acb0"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -413,8 +413,8 @@
         "value": "cx288d13e1b63563459a2ac6179f237711f6851cb5"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -428,8 +428,8 @@
         "value": "cx0664cceb34d391ba78a897200fab94b9b49443d0"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -443,8 +443,8 @@
         "value": "cx4297f4b63262507623b6ad575d0d8dd2db980e4e"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -458,8 +458,8 @@
         "value": "cx4b48a4789636aa737285feec8908c765d8bc8042"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -473,8 +473,8 @@
         "value": "cx65c9e3d4fea842e00add0d32a5b4c5e4e04c7a6b"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -488,8 +488,8 @@
         "value": "cx508002ec116fbf3ab406329c0df28e70d7e75fb3"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -503,8 +503,8 @@
         "value": "cxb9d0727849a6ce6453f8c9dda2dec2fd543075d4"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -518,8 +518,8 @@
         "value": "cx518f64edcd35db9044a2de63fdc10abfd5f7d611"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -533,8 +533,8 @@
         "value": "cxb8cf9a4700e0c804b780978bf9d9de759c62e787"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -548,8 +548,8 @@
         "value": "cx2609b924e33ef00b648a409245c7ea394c467824"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -563,8 +563,8 @@
         "value": "cx15ddac8c2663bd7e71ca1688dffa426070752fbd"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -578,8 +578,8 @@
         "value": "cxce7b23917ddf57656010decd6017fe5016de681b"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
@@ -593,8 +593,8 @@
         "value": "cxb940dbfbc45c92f3a0cde464c4331102e7a84da8"
       },
       {
-        "type": "Boolean",
-        "value": "true"
+        "type": "boolean",
+        "value": true
       }
     ],
     "value": "0x0"
